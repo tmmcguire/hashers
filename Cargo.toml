@@ -1,0 +1,6 @@
+[package]
+name = "hashers"
+version = "0.1.0"
+authors = ["Tommy M. McGuire <mcguire@crsr.net>"]
+
+[dependencies]
