@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["Tommy M. McGuire <mcguire@crsr.net>"]
 
 [dependencies]
+byteorder = "1.2.3"
+
+[profile.bench]
+opt-level = 3
