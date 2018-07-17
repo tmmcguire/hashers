@@ -49,6 +49,7 @@ macro_rules! hasher_to_fcn {
 pub mod oz {
 
     use std::hash::Hasher;
+    use std::num::Wrapping;
 
     // ====================================
     // DJB2
@@ -79,20 +80,20 @@ pub mod oz {
     /// > has a easily detectable flaws. For example, there's a 3-into-2
     /// > funnel that 0x0021 and 0x0100 both have the same hash (hex
     /// > 0x21, decimal 33) (you saw that one coming, yes?).
-    pub struct DJB2Hasher(u32);
+    pub struct DJB2Hasher(Wrapping<u32>);
 
-    default_for_constant!(DJB2Hasher, 5381);
+    default_for_constant!(DJB2Hasher, Wrapping(5381));
 
     impl Hasher for DJB2Hasher {
         #[inline]
         fn finish(&self) -> u64 {
-            self.0 as u64
+            (self.0).0 as u64
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 = self.0.wrapping_add(self.0 << 5) ^ (*byte as u32);
+                self.0 = self.0 + (self.0 << 5) ^ Wrapping(*byte as u32);
             }
         }
     }
@@ -129,23 +130,20 @@ pub mod oz {
     /// > was picked out of thin air while experimenting with different constants,
     /// > and turns out to be a prime. this is one of the algorithms used in
     /// > berkeley db (see sleepycat) and elsewhere.
-    pub struct SDBMHasher(u32);
+    pub struct SDBMHasher(Wrapping<u32>);
 
-    default_for_constant!(SDBMHasher, 0);
+    default_for_constant!(SDBMHasher, Wrapping(0));
 
     impl Hasher for SDBMHasher {
         #[inline]
         fn finish(&self) -> u64 {
-            self.0 as u64
+            (self.0).0 as u64
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 = (*byte as u32)
-                    .wrapping_add(self.0 << 6)
-                    .wrapping_add(self.0 << 16)
-                    .wrapping_sub(self.0);
+                self.0 = Wrapping(*byte as u32) + (self.0 << 6) + (self.0 << 16) - self.0;
             }
         }
     }
@@ -181,20 +179,20 @@ pub mod oz {
     /// > actually testing it, or checking something like Knuth's Sorting
     /// > and Searching, so it stuck. It is now found mixed with otherwise
     /// > respectable code, eg. cnews. sigh. [see also: tpop]
-    pub struct LoseLoseHasher(u32);
+    pub struct LoseLoseHasher(Wrapping<u32>);
 
-    default_for_constant!(LoseLoseHasher, 0);
+    default_for_constant!(LoseLoseHasher, Wrapping(0));
 
     impl Hasher for LoseLoseHasher {
         #[inline]
         fn finish(&self) -> u64 {
-            self.0 as u64
+            (self.0).0 as u64
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 += *byte as u32;
+                self.0 += Wrapping(*byte as u32);
             }
         }
     }
@@ -223,6 +221,7 @@ pub mod oz {
 /// https://en.wikipedia.org/wiki/Jenkins_hash_function.
 pub mod jenkins {
     use std::hash::Hasher;
+    use std::num::Wrapping;
 
     use byteorder::{ByteOrder, LittleEndian};
 
@@ -239,25 +238,25 @@ pub mod jenkins {
     /// > implemented it to fill a set of requirements posed by Colin
     /// > Plumb. Colin ended up using an even simpler (and weaker) hash that
     /// > was sufficient for his purpose.
-    pub struct OAATHasher(u32);
+    pub struct OAATHasher(Wrapping<u32>);
 
-    default_for_constant!(OAATHasher, 0);
+    default_for_constant!(OAATHasher, Wrapping(0));
 
     impl Hasher for OAATHasher {
         #[inline]
         fn finish(&self) -> u64 {
             let mut hash = self.0;
-            hash = hash.wrapping_add(hash << 3);
+            hash += hash << 3;
             hash ^= hash >> 11;
-            hash = hash.wrapping_add(hash << 15);
-            hash as u64
+            hash += hash << 15;
+            hash.0 as u64
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 = self.0.wrapping_add(*byte as u32);
-                self.0 = self.0.wrapping_add(self.0 << 10);
+                self.0 += Wrapping(*byte as u32);
+                self.0 += self.0 << 10;
                 self.0 ^= self.0 >> 6;
             }
         }
@@ -343,18 +342,21 @@ pub mod jenkins {
     ///
     /// See http://www.burtleburtle.net/bob/c/lookup3.c.
     pub struct Lookup3Hasher {
-        pc: u32, // primary initval / primary hash
-        pb: u32, // secondary initval / secondary hash
+        pc: Wrapping<u32>, // primary initval / primary hash
+        pb: Wrapping<u32>, // secondary initval / secondary hash
     }
 
     impl Default for Lookup3Hasher {
         fn default() -> Lookup3Hasher {
-            Lookup3Hasher { pc: 0, pb: 0 }
+            Lookup3Hasher {
+                pc: Wrapping(0),
+                pb: Wrapping(0),
+            }
         }
     }
 
     #[inline]
-    fn rot(x: u32, k: usize) -> u32 {
+    fn rot(x: Wrapping<u32>, k: usize) -> Wrapping<u32> {
         x << k | x >> (32 - k)
     }
 
@@ -399,25 +401,25 @@ pub mod jenkins {
     /// > on, and rotates are much kinder to the top and bottom bits, so I used
     /// > rotates.
     #[inline]
-    fn mix(a: &mut u32, b: &mut u32, c: &mut u32) {
-        *a = a.wrapping_sub(*c);
+    fn mix(a: &mut Wrapping<u32>, b: &mut Wrapping<u32>, c: &mut Wrapping<u32>) {
+        *a -= *c;
         *a ^= rot(*c, 4);
-        *c = c.wrapping_add(*b);
-        *b = b.wrapping_sub(*a);
+        *c += *b;
+        *b -= *a;
         *b ^= rot(*a, 6);
-        *a = a.wrapping_add(*c);
-        *c = c.wrapping_sub(*b);
+        *a += *c;
+        *c -= *b;
         *c ^= rot(*b, 8);
-        *b = b.wrapping_add(*a);
-        *a = a.wrapping_sub(*c);
+        *b += *a;
+        *a -= *c;
         *a ^= rot(*c, 16);
-        *c = c.wrapping_add(*b);
-        *b = b.wrapping_sub(*a);
+        *c += *b;
+        *b -= *a;
         *b ^= rot(*a, 19);
-        *a = a.wrapping_add(*c);
-        *c = c.wrapping_sub(*b);
+        *a += *c;
+        *c -= *b;
         *c ^= rot(*b, 4);
-        *b = b.wrapping_add(*a);
+        *b += *a;
     }
 
     /// > final -- final mixing of 3 32-bit values (a,b,c) into c
@@ -445,26 +447,27 @@ pub mod jenkins {
     /// >  10  8 15 26 3 22 24
     /// >  11  8 15 26 3 22 24
     #[inline]
-    fn final_mix(a: &mut u32, b: &mut u32, c: &mut u32) {
+    fn final_mix(a: &mut Wrapping<u32>, b: &mut Wrapping<u32>, c: &mut Wrapping<u32>) {
         *c ^= *b;
-        *c = c.wrapping_sub(rot(*b, 14));
+        *c -= rot(*b, 14);
         *a ^= *c;
-        *a = a.wrapping_sub(rot(*c, 11));
+        *a -= rot(*c, 11);
         *b ^= *a;
-        *b = b.wrapping_sub(rot(*a, 25));
+        *b -= rot(*a, 25);
         *c ^= *b;
-        *c = c.wrapping_sub(rot(*b, 16));
+        *c -= rot(*b, 16);
         *a ^= *c;
-        *a = a.wrapping_sub(rot(*c, 4));
+        *a -= rot(*c, 4);
         *b ^= *a;
-        *b = b.wrapping_sub(rot(*a, 14));
+        *b -= rot(*a, 14);
         *c ^= *b;
-        *c = c.wrapping_sub(rot(*b, 24));
+        *c -= rot(*b, 24);
     }
 
+    /// Turn 0-4 bytes into an unsigned 32-bit number.
     #[inline]
-    fn shift_add(s: &[u8]) -> u32 {
-        match s.len() {
+    fn shift_add(s: &[u8]) -> Wrapping<u32> {
+        Wrapping(match s.len() {
             1 => s[0] as u32,
             2 => (s[0] as u32) + ((s[1] as u32) << 8),
             3 => (s[0] as u32) + ((s[1] as u32) << 8) + ((s[2] as u32) << 16),
@@ -472,13 +475,13 @@ pub mod jenkins {
                 (s[0] as u32) + ((s[1] as u32) << 8) + ((s[2] as u32) << 16) + ((s[3] as u32) << 24)
             }
             _ => 0 as u32,
-        }
+        })
     }
 
     impl Hasher for Lookup3Hasher {
         #[inline]
         fn finish(&self) -> u64 {
-            (self.pc as u64) + ((self.pb as u64) << 32)
+            (self.pc.0 as u64) + ((self.pb.0 as u64) << 32)
         }
 
         #[inline]
@@ -486,13 +489,11 @@ pub mod jenkins {
             if bytes.len() == 0 {
                 return;
             }
-            let initial = 0xdeadbeefu32
-                .wrapping_add(bytes.len() as u32)
-                .wrapping_add(self.pc);
-            let mut a: u32 = initial;
-            let mut b: u32 = initial;
-            let mut c: u32 = initial;
-            c = c.wrapping_add(self.pb);
+            let initial = Wrapping(0xdeadbeefu32) + Wrapping(bytes.len() as u32) + self.pc;
+            let mut a: Wrapping<u32> = initial;
+            let mut b: Wrapping<u32> = initial;
+            let mut c: Wrapping<u32> = initial;
+            c += self.pb;
 
             if cfg!(target_endian = "little") {
                 // TODO: Use exact_chunks?
@@ -500,22 +501,22 @@ pub mod jenkins {
                     if chunk.len() == 12 {
                         let mut words: [u32; 3] = [0; 3]; // 3 * (4 bytes) = 12
                         LittleEndian::read_u32_into(chunk, &mut words);
-                        a = a.wrapping_add(words[0]);
-                        b = b.wrapping_add(words[1]);
-                        c = c.wrapping_add(words[2]);
+                        a += Wrapping(words[0]);
+                        b += Wrapping(words[1]);
+                        c += Wrapping(words[2]);
                         mix(&mut a, &mut b, &mut c);
                     } else if chunk.len() >= 8 {
                         let (w, bs) = chunk.split_at(8);
                         let mut words: [u32; 2] = [0; 2]; // 2 * (4 bytes) = 12
                         LittleEndian::read_u32_into(w, &mut words);
-                        a = a.wrapping_add(words[0]);
-                        b = b.wrapping_add(words[1]);
+                        a += Wrapping(words[0]);
+                        b += Wrapping(words[1]);
                         c += shift_add(bs);
                     } else if chunk.len() >= 4 {
                         let (w, bs) = chunk.split_at(4);
                         let mut words: [u32; 1] = [0; 1]; // 1 * (4 bytes) = 12
                         LittleEndian::read_u32_into(w, &mut words);
-                        a = a.wrapping_add(words[0]);
+                        a += Wrapping(words[0]);
                         b += shift_add(bs);
                     } else {
                         a += shift_add(chunk);
@@ -578,6 +579,7 @@ pub mod jenkins {
 mod benchmarks {
     use super::jenkins::*;
     use super::oz::*;
+    use std::collections::hash_map::DefaultHasher;
     use std::hash::Hasher;
     use test::{black_box, Bencher};
 
@@ -621,42 +623,49 @@ mod benchmarks {
         };
     }
 
+    tiny_bench!(tiny_default, defaulthasher, DefaultHasher);
     tiny_bench!(tiny_djb2, djb2, DJB2Hasher);
     tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
     tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
     tiny_bench!(tiny_ooat, ooat, OAATHasher);
     tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
 
+    w32_bench!(w32_10_default, DefaultHasher, 10);
     w32_bench!(w32_10_djb2, DJB2Hasher, 10);
     w32_bench!(w32_10_sdbm, SDBMHasher, 10);
     w32_bench!(w32_10_loselose, LoseLoseHasher, 10);
     w32_bench!(w32_10_ooat, OAATHasher, 10);
     w32_bench!(w32_10_lookup3, Lookup3Hasher, 10);
 
+    w32_bench!(w32_100_default, DefaultHasher, 100);
     w32_bench!(w32_100_djb2, DJB2Hasher, 100);
     w32_bench!(w32_100_sdbm, SDBMHasher, 100);
     w32_bench!(w32_100_loselose, LoseLoseHasher, 100);
     w32_bench!(w32_100_ooat, OAATHasher, 100);
     w32_bench!(w32_100_lookup3, Lookup3Hasher, 100);
 
+    w32_bench!(w32_1000_default, DefaultHasher, 1000);
     w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
     w32_bench!(w32_1000_sdbm, SDBMHasher, 1000);
     w32_bench!(w32_1000_loselose, LoseLoseHasher, 1000);
     w32_bench!(w32_1000_ooat, OAATHasher, 1000);
     w32_bench!(w32_1000_lookup3, Lookup3Hasher, 1000);
 
+    w64_bench!(w64_10_default, DefaultHasher, 10);
     w64_bench!(w64_10_djb2, DJB2Hasher, 10);
     w64_bench!(w64_10_sdbm, SDBMHasher, 10);
     w64_bench!(w64_10_loselose, LoseLoseHasher, 10);
     w64_bench!(w64_10_ooat, OAATHasher, 10);
     w64_bench!(w64_10_lookup3, Lookup3Hasher, 10);
 
+    w64_bench!(w64_100_default, DefaultHasher, 100);
     w64_bench!(w64_100_djb2, DJB2Hasher, 100);
     w64_bench!(w64_100_sdbm, SDBMHasher, 100);
     w64_bench!(w64_100_loselose, LoseLoseHasher, 100);
     w64_bench!(w64_100_ooat, OAATHasher, 100);
     w64_bench!(w64_100_lookup3, Lookup3Hasher, 100);
 
+    w64_bench!(w64_1000_default, DefaultHasher, 1000);
     w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
     w64_bench!(w64_1000_sdbm, SDBMHasher, 1000);
     w64_bench!(w64_1000_loselose, LoseLoseHasher, 1000);
