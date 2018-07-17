@@ -2,6 +2,9 @@
 //! - http://www.cse.yorku.ca/~oz/hash.html Oz's Hash functions. (oz)
 //! - http://www.burtleburtle.net/bob/hash/doobs.html Bob Jenkins'
 //!   (updated) 1997 Dr. Dobbs article. (jenkins)
+//! 
+//! Each sub-module implements one or more Hashers plus a minimal testing module. As well, the
+//! module has a benchmarking module for comparing the Hashers.
 
 #![feature(test)]
 
@@ -45,7 +48,8 @@ macro_rules! hasher_to_fcn {
 /// > "well known" functions such as PJW, K&R[1], etc. Also see tpop
 /// > pp. 126 for graphing hash functions.
 ///
-/// "tpop" is *The Practice of Programming*.
+/// "tpop" is *The Practice of Programming*. This page shows three
+/// classic hashing algorithms.
 pub mod oz {
 
     use std::hash::Hasher;
@@ -54,6 +58,12 @@ pub mod oz {
     // ====================================
     // DJB2
 
+    /// Dan Bernstein's fameous hashing function.
+    ///
+    /// This Hasher is allegedly good for small tables with lowercase
+    /// ASCII keys. It is also dirt simple, although other hash
+    /// functions are better and almost as simple.
+    ///
     /// From http://www.cse.yorku.ca/~oz/hash.html:
     ///
     /// > this algorithm (k=33) was first reported by dan bernstein many
@@ -118,18 +128,22 @@ pub mod oz {
     // ====================================
     // sdbm
 
+    /// The hash function from SDBM (and gawk?). It might be good for
+    /// something.
+    ///
     /// From http://www.cse.yorku.ca/~oz/hash.html:
     ///
     /// > this algorithm was created for sdbm (a public-domain
-    /// > reimplementation of ndbm) database library. it was found to do well
-    /// > in scrambling bits, causing better distribution of the keys and fewer
-    /// > splits. it also happens to be a good general hashing function with good
-    /// > distribution. the actual function is hash(i) = hash(i - 1) * 65599 +
-    /// > str[i]; what is included below is the faster version used in gawk.
-    /// > [there is even a faster, duff-device version] the magic constant 65599
-    /// > was picked out of thin air while experimenting with different constants,
-    /// > and turns out to be a prime. this is one of the algorithms used in
-    /// > berkeley db (see sleepycat) and elsewhere.
+    /// > reimplementation of ndbm) database library. it was found
+    /// > to do well in scrambling bits, causing better distribution
+    /// > of the keys and fewer splits. it also happens to be a good
+    /// > general hashing function with good distribution. the actual
+    /// > function is hash(i) = hash(i - 1) * 65599 + str[i]; what is
+    /// > included below is the faster version used in gawk. [there is
+    /// > even a faster, duff-device version] the magic constant 65599
+    /// > was picked out of thin air while experimenting with different
+    /// > constants, and turns out to be a prime. this is one of the
+    /// > algorithms used in berkeley db (see sleepycat) and elsewhere.
     pub struct SDBMHasher(Wrapping<u32>);
 
     default_for_constant!(SDBMHasher, Wrapping(0));
@@ -168,17 +182,21 @@ pub mod oz {
     // ====================================
     // lose_lose
 
+    /// A radically bad hash function from the 1st edition of the K&R C
+    /// book. Do not use; it's horrible.
+    ///
     /// From http://www.cse.yorku.ca/~oz/hash.html
     ///
-    /// > This hash function appeared in K&R (1st ed) but at least the reader
-    /// > was warned: "This is not the best possible algorithm, but it has
-    /// > the merit of extreme simplicity." This is an understatement; It
-    /// > is a terrible hashing algorithm, and it could have been much
-    /// > better without sacrificing its "extreme simplicity." [see the
-    /// > second edition!] Many C programmers use this function without
-    /// > actually testing it, or checking something like Knuth's Sorting
-    /// > and Searching, so it stuck. It is now found mixed with otherwise
-    /// > respectable code, eg. cnews. sigh. [see also: tpop]
+    /// > This hash function appeared in K&R (1st ed) but at least the
+    /// > reader was warned: "This is not the best possible algorithm,
+    /// > but it has the merit of extreme simplicity." This is an
+    /// > understatement; It is a terrible hashing algorithm, and it
+    /// > could have been much better without sacrificing its "extreme
+    /// > simplicity." [see the second edition!] Many C programmers
+    /// > use this function without actually testing it, or checking
+    /// > something like Knuth's Sorting and Searching, so it stuck. It
+    /// > is now found mixed with otherwise respectable code, eg. cnews.
+    /// > sigh. [see also: tpop]
     pub struct LoseLoseHasher(Wrapping<u32>);
 
     default_for_constant!(LoseLoseHasher, Wrapping(0));
@@ -228,16 +246,20 @@ pub mod jenkins {
     // ================================
     // one_at_a_time
 
+    /// The one-at-a-time Hasher. Relatively simple, but superseded by
+    /// later algorithms.
+    ///
     /// From http://www.burtleburtle.net/bob/hash/doobs.html:
     ///
     /// > This is similar to the rotating hash, but it actually mixes
-    /// > the internal state. It takes 9n+9 instructions and produces a full
-    /// > 4-byte result. Preliminary analysis suggests there are no funnels.
+    /// > the internal state. It takes 9n+9 instructions and produces a
+    /// > full 4-byte result. Preliminary analysis suggests there are no
+    /// > funnels.
     /// >
     /// > This hash was not in the original Dr. Dobb's article. I
     /// > implemented it to fill a set of requirements posed by Colin
-    /// > Plumb. Colin ended up using an even simpler (and weaker) hash that
-    /// > was sufficient for his purpose.
+    /// > Plumb. Colin ended up using an even simpler (and weaker) hash
+    /// > that was sufficient for his purpose.
     pub struct OAATHasher(Wrapping<u32>);
 
     default_for_constant!(OAATHasher, Wrapping(0));
@@ -265,78 +287,85 @@ pub mod jenkins {
     // ------------------------------------
 
     #[cfg(test)]
-    mod ooat_tests {
+    mod oaat_tests {
         use super::*;
 
-        hasher_to_fcn!(ooat, OAATHasher);
+        hasher_to_fcn!(oaat, OAATHasher);
 
         #[test]
         fn basic() {
-            assert_eq!(ooat(b""), 0);
-            assert_eq!(ooat(b"a"), 3392050242);
-            assert_eq!(ooat(b"b"), 14385563);
-            assert_eq!(ooat(b"ab"), 1172708952);
+            assert_eq!(oaat(b""), 0);
+            assert_eq!(oaat(b"a"), 3392050242);
+            assert_eq!(oaat(b"b"), 14385563);
+            assert_eq!(oaat(b"ab"), 1172708952);
         }
     }
 
     // ================================
     // lookup3
 
+    /// Another Hasher from the inventor of SpookyHash (which should be
+    /// here, soon). Fancy bit-mixing. *Very fancy.*
+    ///
     /// From http://www.burtleburtle.net/bob/hash/doobs.html:
     ///
     /// > ...http://burtleburtle.net/bob/c/lookup3.c (2006) is about 2
-    /// > cycles/byte, works well on 32-bit platforms, and can produce a 32 or
-    /// > 64 bit hash.
+    /// > cycles/byte, works well on 32-bit platforms, and can produce a
+    /// > 32 or 64 bit hash.
     ///
-    /// > A hash I wrote nine years later designed along the same lines as
-    /// > "My Hash", see http://burtleburtle.net/bob/c/lookup3.c. It takes 2n
-    /// > instructions per byte for mixing instead of 3n. When fitting bytes into
-    /// > registers (the other 3n instructions), it takes advantage of alignment
-    /// > when it can (a trick learned from Paul Hsieh's hash). It doesn't bother
-    /// > to reserve a byte for the length. That allows zero-length strings to
-    /// > require no mixing. More generally, the length that requires additional
+    /// > A hash I wrote nine years later designed along the same lines
+    /// > as "My Hash", see http://burtleburtle.net/bob/c/lookup3.c.
+    /// > It takes 2n instructions per byte for mixing instead of 3n.
+    /// > When fitting bytes into registers (the other 3n instructions),
+    /// > it takes advantage of alignment when it can (a trick learned
+    /// > from Paul Hsieh's hash). It doesn't bother to reserve a byte
+    /// > for the length. That allows zero-length strings to require no
+    /// > mixing. More generally, the length that requires additional
     /// > mixes is now 13-25-37 instead of 12-24-36.
     /// >
-    /// > One theoretical insight was that the last mix doesn't need to do well in
-    /// > reverse (though it has to affect all output bits). And the middle mixing
-    /// > steps don't have to affect all output bits (affecting some 32 bits is
-    /// > enough), though it does have to do well in reverse. So it uses different
-    /// > mixes for those two cases. "My Hash" (lookup2.c) had a single mixing
-    /// > operation that had to satisfy both sets of requirements, which is why it
+    /// > One theoretical insight was that the last mix doesn't need to
+    /// > do well in reverse (though it has to affect all output bits).
+    /// > And the middle mixing steps don't have to affect all output
+    /// > bits (affecting some 32 bits is enough), though it does have
+    /// > to do well in reverse. So it uses different mixes for those
+    /// > two cases. "My Hash" (lookup2.c) had a single mixing operation
+    /// > that had to satisfy both sets of requirements, which is why it
     /// > was slower.
     /// >
-    /// > On a Pentium 4 with gcc 3.4.?, Paul's hash was usually faster than
-    /// > lookup3.c. On a Pentium 4 with gcc 3.2.?, they were about the same
-    /// > speed. On a Pentium 4 with icc -O2, lookup3.c was a little faster than
-    /// > Paul's hash. I don't know how it would play out on other chips and
-    /// > other compilers. lookup3.c is slower than the additive hash pretty much
-    /// > forever, but it's faster than the rotating hash for keys longer than 5
-    /// > bytes.
+    /// > On a Pentium 4 with gcc 3.4.?, Paul's hash was usually faster
+    /// > than lookup3.c. On a Pentium 4 with gcc 3.2.?, they were about
+    /// > the same speed. On a Pentium 4 with icc -O2, lookup3.c was a
+    /// > little faster than Paul's hash. I don't know how it would play
+    /// > out on other chips and other compilers. lookup3.c is slower
+    /// > than the additive hash pretty much forever, but it's faster
+    /// > than the rotating hash for keys longer than 5 bytes.
     /// >
-    /// > lookup3.c does a much more thorough job of mixing than any of my
-    /// > previous hashes (lookup2.c, lookup.c, One-at-a-time). All my previous
-    /// > hashes did a more thorough job of mixing than Paul Hsieh's hash. Paul's
-    /// > hash does a good enough job of mixing for most practical purposes.
+    /// > lookup3.c does a much more thorough job of mixing than any of
+    /// > my previous hashes (lookup2.c, lookup.c, One-at-a-time). All
+    /// > my previous hashes did a more thorough job of mixing than Paul
+    /// > Hsieh's hash. Paul's hash does a good enough job of mixing for
+    /// > most practical purposes.
     /// >
-    /// > The most evil set of keys I know of are sets of keys that are all the
-    /// > same length, with all bytes zero, except with a few bits set. This
-    /// > is tested by frog.c.. To be even more evil, I had my hashes return b
-    /// > and c instead of just c, yielding a 64-bit hash value. Both lookup.c
-    /// > and lookup2.c start seeing collisions after 253 frog.c keypairs. Paul
-    /// > Hsieh's hash sees collisions after 217 keypairs, even if we take two
-    /// > hashes with different seeds. lookup3.c is the only one of the batch
-    /// > that passes this test. It gets its first collision somewhere beyond 263
-    /// > keypairs, which is exactly what you'd expect from a completely random
-    /// > mapping to 64-bit values.
+    /// > The most evil set of keys I know of are sets of keys that are
+    /// > all the same length, with all bytes zero, except with a few
+    /// > bits set. This is tested by frog.c.. To be even more evil, I
+    /// > had my hashes return b and c instead of just c, yielding a
+    /// > 64-bit hash value. Both lookup.c and lookup2.c start seeing
+    /// > collisions after 253 frog.c keypairs. Paul Hsieh's hash sees
+    /// > collisions after 217 keypairs, even if we take two hashes
+    /// > with different seeds. lookup3.c is the only one of the batch
+    /// > that passes this test. It gets its first collision somewhere
+    /// > beyond 263 keypairs, which is exactly what you'd expect from a
+    /// > completely random mapping to 64-bit values.
     ///
     /// This structure implements hashlittle2:
     ///
     /// > You probably want to use hashlittle(). hashlittle() and
     /// > hashbig() hash byte arrays. hashlittle() is is faster than
-    /// > hashbig() on little-endian machines.  Intel and AMD are
-    /// > little-endian machines.  On second thought, you probably want
+    /// > hashbig() on little-endian machines. Intel and AMD are
+    /// > little-endian machines. On second thought, you probably want
     /// > hashlittle2(), which is identical to hashlittle() except it
-    /// > returns two 32-bit hashes for the price of one.  You could
+    /// > returns two 32-bit hashes for the price of one. You could
     /// > implement hashbig2() if you wanted but I haven't bothered
     /// > here.
     ///
@@ -627,49 +656,80 @@ mod benchmarks {
     tiny_bench!(tiny_djb2, djb2, DJB2Hasher);
     tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
     tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
-    tiny_bench!(tiny_ooat, ooat, OAATHasher);
+    tiny_bench!(tiny_oaat, oaat, OAATHasher);
     tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
 
     w32_bench!(w32_10_default, DefaultHasher, 10);
     w32_bench!(w32_10_djb2, DJB2Hasher, 10);
     w32_bench!(w32_10_sdbm, SDBMHasher, 10);
     w32_bench!(w32_10_loselose, LoseLoseHasher, 10);
-    w32_bench!(w32_10_ooat, OAATHasher, 10);
+    w32_bench!(w32_10_oaat, OAATHasher, 10);
     w32_bench!(w32_10_lookup3, Lookup3Hasher, 10);
 
     w32_bench!(w32_100_default, DefaultHasher, 100);
     w32_bench!(w32_100_djb2, DJB2Hasher, 100);
     w32_bench!(w32_100_sdbm, SDBMHasher, 100);
     w32_bench!(w32_100_loselose, LoseLoseHasher, 100);
-    w32_bench!(w32_100_ooat, OAATHasher, 100);
+    w32_bench!(w32_100_oaat, OAATHasher, 100);
     w32_bench!(w32_100_lookup3, Lookup3Hasher, 100);
 
     w32_bench!(w32_1000_default, DefaultHasher, 1000);
     w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
     w32_bench!(w32_1000_sdbm, SDBMHasher, 1000);
     w32_bench!(w32_1000_loselose, LoseLoseHasher, 1000);
-    w32_bench!(w32_1000_ooat, OAATHasher, 1000);
+    w32_bench!(w32_1000_oaat, OAATHasher, 1000);
     w32_bench!(w32_1000_lookup3, Lookup3Hasher, 1000);
 
     w64_bench!(w64_10_default, DefaultHasher, 10);
     w64_bench!(w64_10_djb2, DJB2Hasher, 10);
     w64_bench!(w64_10_sdbm, SDBMHasher, 10);
     w64_bench!(w64_10_loselose, LoseLoseHasher, 10);
-    w64_bench!(w64_10_ooat, OAATHasher, 10);
+    w64_bench!(w64_10_oaat, OAATHasher, 10);
     w64_bench!(w64_10_lookup3, Lookup3Hasher, 10);
 
     w64_bench!(w64_100_default, DefaultHasher, 100);
     w64_bench!(w64_100_djb2, DJB2Hasher, 100);
     w64_bench!(w64_100_sdbm, SDBMHasher, 100);
     w64_bench!(w64_100_loselose, LoseLoseHasher, 100);
-    w64_bench!(w64_100_ooat, OAATHasher, 100);
+    w64_bench!(w64_100_oaat, OAATHasher, 100);
     w64_bench!(w64_100_lookup3, Lookup3Hasher, 100);
 
     w64_bench!(w64_1000_default, DefaultHasher, 1000);
     w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
     w64_bench!(w64_1000_sdbm, SDBMHasher, 1000);
     w64_bench!(w64_1000_loselose, LoseLoseHasher, 1000);
-    w64_bench!(w64_1000_ooat, OAATHasher, 1000);
+    w64_bench!(w64_1000_oaat, OAATHasher, 1000);
     w64_bench!(w64_1000_lookup3, Lookup3Hasher, 1000);
 
+    fn read_words() -> Vec<String> {
+        use std::fs::File;
+        use std::io::BufReader;
+        use std::io::prelude::*;
+
+        let file = File::open("./data/words.txt").expect("cannot open words.txt");
+        return BufReader::new(file).lines().map(|l| l.expect("bad read")).collect();
+    }
+
+    macro_rules! words_bench {
+        ($name:ident, $hasher:ident, $count:expr) => {
+            #[bench]
+            fn $name(b: &mut Bencher) {
+                let words = read_words();
+                b.iter(|| {
+                    let mut h = $hasher::default();
+                    for i in words.iter().take($count) {
+                        h.write(i.as_bytes());
+                    }
+                    black_box(h.finish())
+                })
+            }
+        };
+    }
+
+    words_bench!(words1000_default, DefaultHasher, 1000);
+    words_bench!(words1000_djb2, DJB2Hasher, 1000);
+    words_bench!(words1000_sdbm, SDBMHasher, 1000);
+    words_bench!(words1000_loselose, LoseLoseHasher, 1000);
+    words_bench!(words1000_oaat, OAATHasher, 1000);
+    words_bench!(words1000_lookup3, Lookup3Hasher, 1000);
 }
