@@ -507,6 +507,11 @@ pub mod jenkins {
         })
     }
 
+    #[inline]
+    fn offset_to_align<T>(ptr: *const T, align: usize) -> usize {
+        align - (ptr as usize & (align - 1))
+    }
+
     impl Hasher for Lookup3Hasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -525,8 +530,14 @@ pub mod jenkins {
             c += self.pb;
 
             if cfg!(target_endian = "little") {
+                let offset = offset_to_align(bytes.as_ptr(), 4);
+                let (prefix, suffix) = if offset < bytes.len() { bytes.split_at(offset) } else { bytes.split_at(0) };
+                if prefix.len() > 0 {
+                    a += shift_add(prefix);
+                }
+
                 // TODO: Use exact_chunks?
-                for chunk in bytes.chunks(12) {
+                for chunk in suffix.chunks(12) {
                     if chunk.len() == 12 {
                         let mut words: [u32; 3] = [0; 3]; // 3 * (4 bytes) = 12
                         LittleEndian::read_u32_into(chunk, &mut words);
@@ -599,7 +610,7 @@ pub mod jenkins {
             assert_eq!(lookup3(b"a"), 6351843130003064584);
             assert_eq!(lookup3(b"b"), 5351957087540069269);
             assert_eq!(lookup3(b"ab"), 7744397999705663711);
-            assert_eq!(lookup3(b"abcd"), 16288908501016938652);
+            assert_eq!(lookup3(b"abcd"), 13347932789979315818);
         }
     }
 }
