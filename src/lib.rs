@@ -743,4 +743,23 @@ mod benchmarks {
     words_bench!(words1000_loselose, LoseLoseHasher, 1000);
     words_bench!(words1000_oaat, OAATHasher, 1000);
     words_bench!(words1000_lookup3, Lookup3Hasher, 1000);
+
+    macro_rules! file_bench {
+        ($name:ident, $hasher:ident, $fcn:ident) => {
+            hasher_to_fcn!($fcn, $hasher);
+            #[bench]
+            fn $name(b: &mut Bencher) {
+                use std::fs::read;
+                let file: Vec<u8> = read("./data/words.txt").expect("cannot read words.txt");
+                b.iter(|| { black_box($fcn(&file)) })
+            }
+        }
+    }
+
+    file_bench!(file_default, DefaultHasher, defaultx);
+    file_bench!(file_djb2, DJB2Hasher, djb2x);
+    file_bench!(file_sdbm, SDBMHasher, sdbmx);
+    file_bench!(file_loselose, LoseLoseHasher, loselosex);
+    file_bench!(file_oaat, OAATHasher, oaatx);
+    file_bench!(file_lookup3, Lookup3Hasher, lookup3x);
 }
