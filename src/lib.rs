@@ -2,7 +2,7 @@
 //! - http://www.cse.yorku.ca/~oz/hash.html Oz's Hash functions. (oz)
 //! - http://www.burtleburtle.net/bob/hash/doobs.html Bob Jenkins'
 //!   (updated) 1997 Dr. Dobbs article. (jenkins)
-//! 
+//!
 //! Each sub-module implements one or more Hashers plus a minimal testing module. As well, the
 //! module has a benchmarking module for comparing the Hashers.
 
@@ -25,15 +25,53 @@ macro_rules! default_for_constant {
     };
 }
 
-#[cfg(test)]
 macro_rules! hasher_to_fcn {
     ($name:ident, $hasher:ident) => {
-        fn $name(bytes: &[u8]) -> u64 {
+        pub fn $name(bytes: &[u8]) -> u64 {
             let mut hasher = $hasher::default();
             hasher.write(bytes);
             hasher.finish()
         }
     };
+}
+
+// ====================================
+// Hashing modules
+
+/// For easy access, reexport the built-in hash map's DefaultHasher,
+/// including a matching one-stop function.
+pub mod builtin {
+    use std::hash::Hasher;
+
+    pub use std::collections::hash_map::DefaultHasher;
+
+    hasher_to_fcn!(default, DefaultHasher);
+}
+
+pub mod null {
+    use std::hash::Hasher;
+
+    pub struct NullHasher;
+
+    impl Hasher for NullHasher {
+        #[inline]
+        fn finish(&self) -> u64 {
+            0 as u64
+        }
+
+        #[inline]
+        fn write(&mut self, _bytes: &[u8]) {
+            // data, you say?
+        }
+    }
+
+    impl Default for NullHasher {
+        fn default() -> NullHasher {
+            NullHasher
+        }
+    }
+
+    hasher_to_fcn!(null, NullHasher);
 }
 
 /// From http://www.cse.yorku.ca/~oz/hash.html.
@@ -108,13 +146,13 @@ pub mod oz {
         }
     }
 
+    hasher_to_fcn!(djb2, DJB2Hasher);
+
     // ------------------------------------
 
     #[cfg(test)]
     mod djb2_tests {
         use super::*;
-
-        hasher_to_fcn!(djb2, DJB2Hasher);
 
         #[test]
         fn basic() {
@@ -162,13 +200,13 @@ pub mod oz {
         }
     }
 
+    hasher_to_fcn!(sdbm, SDBMHasher);
+
     // ------------------------------------
 
     #[cfg(test)]
     mod sdbm_tests {
         use super::*;
-
-        hasher_to_fcn!(sdbm, SDBMHasher);
 
         #[test]
         fn basic() {
@@ -215,13 +253,13 @@ pub mod oz {
         }
     }
 
+    hasher_to_fcn!(loselose, LoseLoseHasher);
+
     // ------------------------------------
 
     #[cfg(test)]
     mod loselose_tests {
         use super::*;
-
-        hasher_to_fcn!(loselose, LoseLoseHasher);
 
         #[test]
         fn basic() {
@@ -284,13 +322,13 @@ pub mod jenkins {
         }
     }
 
+    hasher_to_fcn!(oaat, OAATHasher);
+
     // ------------------------------------
 
     #[cfg(test)]
     mod oaat_tests {
         use super::*;
-
-        hasher_to_fcn!(oaat, OAATHasher);
 
         #[test]
         fn basic() {
@@ -595,14 +633,14 @@ pub mod jenkins {
             self.pc = c;
         }
     }
-    //
+
+    hasher_to_fcn!(lookup3, Lookup3Hasher);
+
     // ------------------------------------
 
     #[cfg(test)]
     mod lookup3_tests {
         use super::*;
-
-        hasher_to_fcn!(lookup3, Lookup3Hasher);
 
         #[test]
         fn basic() {
@@ -714,11 +752,14 @@ mod benchmarks {
 
     fn read_words() -> Vec<String> {
         use std::fs::File;
-        use std::io::BufReader;
         use std::io::prelude::*;
+        use std::io::BufReader;
 
         let file = File::open("./data/words.txt").expect("cannot open words.txt");
-        return BufReader::new(file).lines().map(|l| l.expect("bad read")).collect();
+        return BufReader::new(file)
+            .lines()
+            .map(|l| l.expect("bad read"))
+            .collect();
     }
 
     macro_rules! words_bench {
