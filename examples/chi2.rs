@@ -95,6 +95,7 @@ fn do_hashes(samples: &[Vec<u8>]) {
     println!("loselose: {}", chi2(&samples, oz::loselose, 7));
     println!("null:     {}", chi2(&samples, null::null, 7));
     println!("OAAT:     {}", chi2(&samples, jenkins::oaat, 7));
+    println!("Pass:     {}", chi2(&samples, null::passthrough, 7));
     println!("sdbm:     {}", chi2(&samples, oz::sdbm, 7));
 }
 

@@ -51,6 +51,7 @@ pub mod builtin {
 pub mod null {
     use std::hash::Hasher;
 
+    /// Always returns 0.
     pub struct NullHasher;
 
     impl Hasher for NullHasher {
@@ -72,6 +73,33 @@ pub mod null {
     }
 
     hasher_to_fcn!(null, NullHasher);
+
+    // --------------------------------
+
+    /// Returns the last 4 bytes of the data, as a u64.
+    pub struct PassThroughHasher(u64);
+
+    impl Hasher for PassThroughHasher {
+        #[inline]
+        fn finish(&self) -> u64 {
+            self.0
+        }
+
+        #[inline]
+        fn write(&mut self, bytes: &[u8]) {
+            for byte in bytes.iter() {
+                self.0 = self.0.wrapping_shl(8) + (*byte as u64);
+            }
+        }
+    }
+
+    impl Default for PassThroughHasher {
+        fn default() -> PassThroughHasher {
+            PassThroughHasher(0)
+        }
+    }
+
+    hasher_to_fcn!(passthrough, PassThroughHasher);
 }
 
 /// From http://www.cse.yorku.ca/~oz/hash.html.
