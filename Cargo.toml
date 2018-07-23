@@ -5,6 +5,7 @@ authors = ["Tommy M. McGuire <mcguire@crsr.net>"]
 
 [dependencies]
 byteorder = "1.2.3"
+rand = "0.5.4"
 
 [profile.bench]
 opt-level = 3
