@@ -762,7 +762,7 @@ pub mod fnv {
                 }
             }
             default_for_constant!($name, $offset_basis);
-        }
+        };
     }
 
     fnv1a!(FNV1aHasher32, u32, 16777619, 0x811c9dc5);
