@@ -4,7 +4,8 @@
 //!   (updated) 1997 Dr. Dobbs article. (jenkins)
 //!
 //! Each sub-module implements one or more Hashers plus a minimal testing module. As well, the
-//! module has a benchmarking module for comparing the Hashers.
+//! module has a benchmarking module for comparing the Hashers and some example programs using
+//! statistical tests to prod the various Hashers.
 
 #![feature(test)]
 
@@ -17,7 +18,8 @@ extern crate test;
 // Create an implementation of Default for a simple type initialized
 // with a constant value.
 macro_rules! default_for_constant {
-    ($name:ident, $default:expr) => {
+    ($(#[$attr:meta])* $name:ident, $default:expr) => {
+        $(#[$attr])*
         impl Default for $name {
             #[inline]
             fn default() -> $name {
@@ -29,7 +31,8 @@ macro_rules! default_for_constant {
 
 // Given a Hasher, create a single-use hash function.
 macro_rules! hasher_to_fcn {
-    ($name:ident, $hasher:ident) => {
+    ($(#[$attr:meta])* $name:ident, $hasher:ident) => {
+        $(#[$attr])*
         pub fn $name(bytes: &[u8]) -> u64 {
             let mut hasher = $hasher::default();
             hasher.write(bytes);
@@ -48,7 +51,8 @@ pub mod builtin {
 
     pub use std::collections::hash_map::DefaultHasher;
 
-    hasher_to_fcn!(default, DefaultHasher);
+    hasher_to_fcn!(/// Provide access to the DefaultHasher in a single function.
+        default, DefaultHasher);
 }
 
 /// Poor Hashers used for testing purposes.
@@ -78,7 +82,8 @@ pub mod null {
         }
     }
 
-    hasher_to_fcn!(null, NullHasher);
+    hasher_to_fcn!(/// Provide access to NullHasher in a single call.
+        null, NullHasher);
 
     // --------------------------------
 
@@ -99,8 +104,11 @@ pub mod null {
         }
     }
 
+    /// Provide a default PassThroughHasher initialized to 0.
     default_for_constant!(PassThroughHasher, 0);
-    hasher_to_fcn!(passthrough, PassThroughHasher);
+    
+    hasher_to_fcn!(/// Provide access to PassThroughHasher in a single call.
+        passthrough, PassThroughHasher);
 }
 
 /// From http://www.cse.yorku.ca/~oz/hash.html.
@@ -125,7 +133,7 @@ pub mod oz {
     // ====================================
     // DJB2
 
-    /// Dan Bernstein's fameous hashing function.
+    /// Dan Bernstein's famous hashing function.
     ///
     /// This Hasher is allegedly good for small tables with lowercase
     /// ASCII keys. It is also dirt-simple, although other hash
@@ -174,7 +182,8 @@ pub mod oz {
     }
 
     default_for_constant!(DJB2Hasher, Wrapping(5381));
-    hasher_to_fcn!(djb2, DJB2Hasher);
+    hasher_to_fcn!(/// Provide access to DJB2Hasher in a single call.
+        djb2, DJB2Hasher);
 
     // ------------------------------------
 
@@ -227,7 +236,8 @@ pub mod oz {
     }
 
     default_for_constant!(SDBMHasher, Wrapping(0));
-    hasher_to_fcn!(sdbm, SDBMHasher);
+    hasher_to_fcn!(/// Provide access to SDBMHasher in a single call.
+        sdbm, SDBMHasher);
 
     // ------------------------------------
 
@@ -279,7 +289,8 @@ pub mod oz {
     }
 
     default_for_constant!(LoseLoseHasher, Wrapping(0));
-    hasher_to_fcn!(loselose, LoseLoseHasher);
+    hasher_to_fcn!(/// Provide access to LoseLoseHasher in a single call.
+        loselose, LoseLoseHasher);
 
     // ------------------------------------
 
@@ -347,7 +358,8 @@ pub mod jenkins {
     }
 
     default_for_constant!(OAATHasher, Wrapping(0));
-    hasher_to_fcn!(oaat, OAATHasher);
+    hasher_to_fcn!(/// Provide access to OAATHasher in a single call.
+        oaat, OAATHasher);
 
     // ------------------------------------
 
@@ -680,7 +692,8 @@ pub mod jenkins {
         }
     }
 
-    hasher_to_fcn!(lookup3, Lookup3Hasher);
+    hasher_to_fcn!(/// Provide access to Lookup3Hasher in a single call.
+        lookup3, Lookup3Hasher);
 
     // ------------------------------------
 
@@ -709,9 +722,14 @@ pub mod jenkins {
 pub mod fibonacci {
     use std::hash::Hasher;
 
+    /// This is a wrapper around another hasher that multiplies the
+    /// hash (with wrapping) by 2^64 / Φ (= 1.6180339...). It is intended
+    /// to spread closely-located but different hashes to different parts of
+    /// the table.
     pub struct FibonacciWrapper<H: Hasher>{ inner: H }
 
     impl <H: Hasher> FibonacciWrapper<H> {
+        /// Wrap an existing Hasher inner with the Fibonacci multiplier.
         pub fn wrap(inner: H) -> FibonacciWrapper<H> {
             FibonacciWrapper { inner: inner }
         }
@@ -737,6 +755,7 @@ pub mod fibonacci {
 
     macro_rules! fibonacci_mod {
         ($name:ident, $hash:path) => {
+            /// Multiply the result of the unwrapped function by 2^64 / Φ.
             pub fn $name(slice: &[u8]) -> u64 {
                $hash(slice).wrapping_mul(11400714819323198485u64)
             }
