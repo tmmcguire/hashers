@@ -14,6 +14,8 @@ extern crate test;
 // ====================================
 // Utilities
 
+// Create an implementation of Default for a simple type initialized
+// with a constant value.
 macro_rules! default_for_constant {
     ($name:ident, $default:expr) => {
         impl Default for $name {
@@ -25,6 +27,7 @@ macro_rules! default_for_constant {
     };
 }
 
+// Given a Hasher, create a single-use hash function.
 macro_rules! hasher_to_fcn {
     ($name:ident, $hasher:ident) => {
         pub fn $name(bytes: &[u8]) -> u64 {
@@ -48,6 +51,9 @@ pub mod builtin {
     hasher_to_fcn!(default, DefaultHasher);
 }
 
+/// Poor Hashers used for testing purposes.
+///
+/// These are not expected to be used. Really.
 pub mod null {
     use std::hash::Hasher;
 
@@ -57,7 +63,7 @@ pub mod null {
     impl Hasher for NullHasher {
         #[inline]
         fn finish(&self) -> u64 {
-            0 as u64
+            0u64
         }
 
         #[inline]
@@ -127,7 +133,7 @@ pub mod oz {
     /// Dan Bernstein's fameous hashing function.
     ///
     /// This Hasher is allegedly good for small tables with lowercase
-    /// ASCII keys. It is also dirt simple, although other hash
+    /// ASCII keys. It is also dirt-simple, although other hash
     /// functions are better and almost as simple.
     ///
     /// From http://www.cse.yorku.ca/~oz/hash.html:
@@ -156,20 +162,20 @@ pub mod oz {
     /// > has a easily detectable flaws. For example, there's a 3-into-2
     /// > funnel that 0x0021 and 0x0100 both have the same hash (hex
     /// > 0x21, decimal 33) (you saw that one coming, yes?).
-    pub struct DJB2Hasher(Wrapping<u32>);
+    pub struct DJB2Hasher(Wrapping<u64>);
 
     default_for_constant!(DJB2Hasher, Wrapping(5381));
 
     impl Hasher for DJB2Hasher {
         #[inline]
         fn finish(&self) -> u64 {
-            (self.0).0 as u64
+            (self.0).0
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 = self.0 + (self.0 << 5) ^ Wrapping(*byte as u32);
+                self.0 = self.0 + (self.0 << 5) ^ Wrapping(*byte as u64);
             }
         }
     }
@@ -210,20 +216,20 @@ pub mod oz {
     /// > was picked out of thin air while experimenting with different
     /// > constants, and turns out to be a prime. this is one of the
     /// > algorithms used in berkeley db (see sleepycat) and elsewhere.
-    pub struct SDBMHasher(Wrapping<u32>);
+    pub struct SDBMHasher(Wrapping<u64>);
 
     default_for_constant!(SDBMHasher, Wrapping(0));
 
     impl Hasher for SDBMHasher {
         #[inline]
         fn finish(&self) -> u64 {
-            (self.0).0 as u64
+            (self.0).0
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 = Wrapping(*byte as u32) + (self.0 << 6) + (self.0 << 16) - self.0;
+                self.0 = Wrapping(*byte as u64) + (self.0 << 6) + (self.0 << 16) - self.0;
             }
         }
     }
@@ -263,20 +269,20 @@ pub mod oz {
     /// > something like Knuth's Sorting and Searching, so it stuck. It
     /// > is now found mixed with otherwise respectable code, eg. cnews.
     /// > sigh. [see also: tpop]
-    pub struct LoseLoseHasher(Wrapping<u32>);
+    pub struct LoseLoseHasher(Wrapping<u64>);
 
     default_for_constant!(LoseLoseHasher, Wrapping(0));
 
     impl Hasher for LoseLoseHasher {
         #[inline]
         fn finish(&self) -> u64 {
-            (self.0).0 as u64
+            (self.0).0
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 += Wrapping(*byte as u32);
+                self.0 += Wrapping(*byte as u64);
             }
         }
     }
@@ -326,7 +332,7 @@ pub mod jenkins {
     /// > implemented it to fill a set of requirements posed by Colin
     /// > Plumb. Colin ended up using an even simpler (and weaker) hash
     /// > that was sufficient for his purpose.
-    pub struct OAATHasher(Wrapping<u32>);
+    pub struct OAATHasher(Wrapping<u64>);
 
     default_for_constant!(OAATHasher, Wrapping(0));
 
@@ -337,13 +343,13 @@ pub mod jenkins {
             hash += hash << 3;
             hash ^= hash >> 11;
             hash += hash << 15;
-            hash.0 as u64
+            hash.0
         }
 
         #[inline]
         fn write(&mut self, bytes: &[u8]) {
             for byte in bytes.iter() {
-                self.0 += Wrapping(*byte as u32);
+                self.0 += Wrapping(*byte as u64);
                 self.0 += self.0 << 10;
                 self.0 ^= self.0 >> 6;
             }
@@ -361,9 +367,10 @@ pub mod jenkins {
         #[test]
         fn basic() {
             assert_eq!(oaat(b""), 0);
-            assert_eq!(oaat(b"a"), 3392050242);
-            assert_eq!(oaat(b"b"), 14385563);
-            assert_eq!(oaat(b"ab"), 1172708952);
+            assert_eq!(oaat(b"a"), 29161854018);
+            assert_eq!(oaat(b"b"), 30079156635);
+            assert_eq!(oaat(b"ab"), 30087418617432);
+            assert_eq!(oaat(b"abcdefg"), 3103867595652801641);
         }
     }
 
@@ -595,15 +602,9 @@ pub mod jenkins {
             let mut c: Wrapping<u32> = initial;
             c += self.pb;
 
-            if cfg!(target_endian = "little") {
-                let offset = offset_to_align(bytes.as_ptr(), 4);
-                let (prefix, suffix) = if offset < bytes.len() { bytes.split_at(offset) } else { bytes.split_at(0) };
-                if prefix.len() > 0 {
-                    a += shift_add(prefix);
-                }
-
+            if cfg!(target_endian = "little") && offset_to_align(bytes.as_ptr(), 4) == 0 {
                 // TODO: Use exact_chunks?
-                for chunk in suffix.chunks(12) {
+                for chunk in bytes.chunks(12) {
                     if chunk.len() == 12 {
                         let mut words: [u32; 3] = [0; 3]; // 3 * (4 bytes) = 12
                         LittleEndian::read_u32_into(chunk, &mut words);
@@ -628,8 +629,34 @@ pub mod jenkins {
                         a += shift_add(chunk);
                     }
                 }
+            } else if cfg!(target_endian = "little") && offset_to_align(bytes.as_ptr(), 2) == 0 {
+                for chunk in bytes.chunks(12) {
+                    if chunk.len() == 12 {
+                        let mut words: [u16; 6] = [0; 6]; // 6 * (2 bytes) = 12
+                        LittleEndian::read_u16_into(chunk, &mut words);
+                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
+                        b += Wrapping(words[2] as u32 + (words[3] as u32) << 16);
+                        c += Wrapping(words[4] as u32 + (words[3] as u32) << 16);
+                        mix(&mut a, &mut b, &mut c);
+                    } else if chunk.len() >= 8 {
+                        let (w, bs) = chunk.split_at(8);
+                        let mut words: [u16; 4] = [0; 4]; // 4 * (2 bytes) = 8
+                        LittleEndian::read_u16_into(w, &mut words);
+                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
+                        b += Wrapping(words[2] as u32 + (words[3] as u32) << 16);
+                        c += shift_add(bs);
+                    } else if chunk.len() >= 4 {
+                        let (w, bs) = chunk.split_at(4);
+                        let mut words: [u16; 2] = [0; 2]; // 2 * (2 bytes) = 4
+                        LittleEndian::read_u16_into(w, &mut words);
+                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
+                        b += shift_add(bs);
+                    } else {
+                        a += shift_add(chunk);
+                    }
+                }
             } else {
-                // For big endian machines: hash bytes.
+                // For big endian machines and unaligned slices: hash bytes.
                 // "You could implement hashbig2() if you wanted but I
                 // haven't bothered here."
                 for chunk in bytes.chunks(12) {
@@ -676,7 +703,8 @@ pub mod jenkins {
             assert_eq!(lookup3(b"a"), 6351843130003064584);
             assert_eq!(lookup3(b"b"), 5351957087540069269);
             assert_eq!(lookup3(b"ab"), 7744397999705663711);
-            assert_eq!(lookup3(b"abcd"), 13347932789979315818);
+            assert_eq!(lookup3(b"abcd"), 16288908501016938652);
+            assert_eq!(lookup3(b"abcdefg"), 6461572128488215717);
         }
     }
 }
@@ -684,8 +712,8 @@ pub mod jenkins {
 #[cfg(test)]
 mod benchmarks {
     use super::jenkins::*;
-    use super::oz::*;
     use super::null::*;
+    use super::oz::*;
     use std::collections::hash_map::DefaultHasher;
     use std::hash::Hasher;
     use test::{black_box, Bencher};
@@ -829,9 +857,9 @@ mod benchmarks {
             fn $name(b: &mut Bencher) {
                 use std::fs::read;
                 let file: Vec<u8> = read("./data/words.txt").expect("cannot read words.txt");
-                b.iter(|| { black_box($fcn(&file)) })
+                b.iter(|| black_box($fcn(&file)))
             }
-        }
+        };
     }
 
     file_bench!(file_default, DefaultHasher, defaultx);
