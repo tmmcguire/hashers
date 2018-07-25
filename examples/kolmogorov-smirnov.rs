@@ -53,4 +53,7 @@ fn main() {
     run_sample("alphanumeric", &samples::alphanumeric_samples(10000, 6));
     run_sample("generated   ", &samples::generated_samples(10000, 6));
     run_sample("word_samples", &samples::word_samples());
+    println!("");
+    print_ds("generated", "fibo djb2", d(&do_hashes(hashers::fibonacci::fibo_djb2, &samples::generated_samples(10000, 6))));
+    print_ds("generated", "fibo default", d(&do_hashes(hashers::fibonacci::fibo_default, &samples::generated_samples(10000, 6))));
 }
