@@ -46,6 +46,7 @@ fn run_sample(name: &str, samples: &[Vec<u8>]) {
     print_ds(name, "djb2    ", d(&do_hashes(hashers::oz::djb2, samples)));
     print_ds(name, "oaat    ", d(&do_hashes(hashers::jenkins::oaat, samples)));
     print_ds(name, "lookup3 ", d(&do_hashes(hashers::jenkins::lookup3, samples)));
+    print_ds(name, "fnv1a 64", d(&do_hashes(hashers::fnv::fnv1a64, samples)));
 }
 
 fn main() {

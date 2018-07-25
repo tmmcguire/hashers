@@ -33,6 +33,7 @@ macro_rules! default_for_constant {
 macro_rules! hasher_to_fcn {
     ($(#[$attr:meta])* $name:ident, $hasher:ident) => {
         $(#[$attr])*
+        #[inline]
         pub fn $name(bytes: &[u8]) -> u64 {
             let mut hasher = $hasher::default();
             hasher.write(bytes);
@@ -51,8 +52,11 @@ pub mod builtin {
 
     pub use std::collections::hash_map::DefaultHasher;
 
-    hasher_to_fcn!(/// Provide access to the DefaultHasher in a single function.
-        default, DefaultHasher);
+    hasher_to_fcn!(
+        /// Provide access to the DefaultHasher in a single function.
+        default,
+        DefaultHasher
+    );
 }
 
 /// Poor Hashers used for testing purposes.
@@ -82,8 +86,11 @@ pub mod null {
         }
     }
 
-    hasher_to_fcn!(/// Provide access to NullHasher in a single call.
-        null, NullHasher);
+    hasher_to_fcn!(
+        /// Provide access to NullHasher in a single call.
+        null,
+        NullHasher
+    );
 
     // --------------------------------
 
@@ -106,9 +113,12 @@ pub mod null {
 
     /// Provide a default PassThroughHasher initialized to 0.
     default_for_constant!(PassThroughHasher, 0);
-    
-    hasher_to_fcn!(/// Provide access to PassThroughHasher in a single call.
-        passthrough, PassThroughHasher);
+
+    hasher_to_fcn!(
+        /// Provide access to PassThroughHasher in a single call.
+        passthrough,
+        PassThroughHasher
+    );
 }
 
 /// From http://www.cse.yorku.ca/~oz/hash.html.
@@ -182,8 +192,11 @@ pub mod oz {
     }
 
     default_for_constant!(DJB2Hasher, Wrapping(5381));
-    hasher_to_fcn!(/// Provide access to DJB2Hasher in a single call.
-        djb2, DJB2Hasher);
+    hasher_to_fcn!(
+        /// Provide access to DJB2Hasher in a single call.
+        djb2,
+        DJB2Hasher
+    );
 
     // ------------------------------------
 
@@ -236,8 +249,11 @@ pub mod oz {
     }
 
     default_for_constant!(SDBMHasher, Wrapping(0));
-    hasher_to_fcn!(/// Provide access to SDBMHasher in a single call.
-        sdbm, SDBMHasher);
+    hasher_to_fcn!(
+        /// Provide access to SDBMHasher in a single call.
+        sdbm,
+        SDBMHasher
+    );
 
     // ------------------------------------
 
@@ -289,8 +305,11 @@ pub mod oz {
     }
 
     default_for_constant!(LoseLoseHasher, Wrapping(0));
-    hasher_to_fcn!(/// Provide access to LoseLoseHasher in a single call.
-        loselose, LoseLoseHasher);
+    hasher_to_fcn!(
+        /// Provide access to LoseLoseHasher in a single call.
+        loselose,
+        LoseLoseHasher
+    );
 
     // ------------------------------------
 
@@ -358,8 +377,11 @@ pub mod jenkins {
     }
 
     default_for_constant!(OAATHasher, Wrapping(0));
-    hasher_to_fcn!(/// Provide access to OAATHasher in a single call.
-        oaat, OAATHasher);
+    hasher_to_fcn!(
+        /// Provide access to OAATHasher in a single call.
+        oaat,
+        OAATHasher
+    );
 
     // ------------------------------------
 
@@ -692,8 +714,11 @@ pub mod jenkins {
         }
     }
 
-    hasher_to_fcn!(/// Provide access to Lookup3Hasher in a single call.
-        lookup3, Lookup3Hasher);
+    hasher_to_fcn!(
+        /// Provide access to Lookup3Hasher in a single call.
+        lookup3,
+        Lookup3Hasher
+    );
 
     // ------------------------------------
 
@@ -714,6 +739,64 @@ pub mod jenkins {
 }
 
 // ====================================
+// FNV-1a (64-bit)
+
+/// The [Fowler–Noll–Vo hash function](https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function).
+pub mod fnv {
+    use std::hash::Hasher;
+
+    macro_rules! fnv1a {
+        ($name:ident, $size:ty, $fnv_prime:expr, $offset_basis:expr) => {
+            pub struct $name($size);
+            impl Hasher for $name {
+                #[inline]
+                fn finish(&self) -> u64 {
+                    self.0 as u64
+                }
+                #[inline]
+                fn write(&mut self, bytes: &[u8]) {
+                    for byte in bytes.iter() {
+                        self.0 = self.0 ^ (*byte as $size);
+                        self.0 = self.0.wrapping_mul($fnv_prime);
+                    }
+                }
+            }
+            default_for_constant!($name, $offset_basis);
+        }
+    }
+
+    fnv1a!(FNV1aHasher32, u32, 16777619, 0x811c9dc5);
+    fnv1a!(FNV1aHasher64, u64, 1099511628211, 0xcbf29ce484222325);
+
+    hasher_to_fcn!(
+        /// Provide access to FNV1aHasher32 in a single call.
+        fnv1a32,
+        FNV1aHasher32
+    );
+
+    hasher_to_fcn!(
+        /// Provide access to FNV1aHasher64 in a single call.
+        fnv1a64,
+        FNV1aHasher64
+    );
+
+    #[cfg(test)]
+    mod fnv1a_tests {
+        use super::*;
+
+        #[test]
+        fn basic() {
+            assert_eq!(fnv1a64(b""), 14695981039346656037);
+            assert_eq!(fnv1a64(b"a"), 12638187200555641996);
+            assert_eq!(fnv1a64(b"b"), 12638190499090526629);
+            assert_eq!(fnv1a64(b"ab"), 620445648566982762);
+            assert_eq!(fnv1a64(b"abcd"), 18165163011005162717);
+            assert_eq!(fnv1a64(b"abcdefg"), 4642726675185563447);
+        }
+    }
+}
+
+// ====================================
 // Fibonacci hash modifier
 
 /// From https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
@@ -726,22 +809,26 @@ pub mod fibonacci {
     /// hash (with wrapping) by 2^64 / Φ (= 1.6180339...). It is intended
     /// to spread closely-located but different hashes to different parts of
     /// the table.
-    pub struct FibonacciWrapper<H: Hasher>{ inner: H }
+    pub struct FibonacciWrapper<H: Hasher> {
+        inner: H,
+    }
 
-    impl <H: Hasher> FibonacciWrapper<H> {
+    impl<H: Hasher> FibonacciWrapper<H> {
         /// Wrap an existing Hasher inner with the Fibonacci multiplier.
         pub fn wrap(inner: H) -> FibonacciWrapper<H> {
             FibonacciWrapper { inner: inner }
         }
     }
 
-    impl <H: Hasher + Default> Default for FibonacciWrapper<H> {
+    impl<H: Hasher + Default> Default for FibonacciWrapper<H> {
         fn default() -> FibonacciWrapper<H> {
-            FibonacciWrapper { inner: H::default() }
+            FibonacciWrapper {
+                inner: H::default(),
+            }
         }
     }
 
-    impl <H: Hasher> Hasher for FibonacciWrapper<H> {
+    impl<H: Hasher> Hasher for FibonacciWrapper<H> {
         #[inline]
         fn finish(&self) -> u64 {
             self.inner.finish().wrapping_mul(11400714819323198485u64)
@@ -757,9 +844,9 @@ pub mod fibonacci {
         ($name:ident, $hash:path) => {
             /// Multiply the result of the unwrapped function by 2^64 / Φ.
             pub fn $name(slice: &[u8]) -> u64 {
-               $hash(slice).wrapping_mul(11400714819323198485u64)
+                $hash(slice).wrapping_mul(11400714819323198485u64)
             }
-        }
+        };
     }
 
     fibonacci_mod!(fibo_default, super::builtin::default);
@@ -794,6 +881,7 @@ pub mod fibonacci {
 
 #[cfg(test)]
 mod benchmarks {
+    use super::fnv::*;
     use super::jenkins::*;
     use super::null::*;
     use super::oz::*;
@@ -848,6 +936,7 @@ mod benchmarks {
     tiny_bench!(tiny_oaat, oaat, OAATHasher);
     tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
     tiny_bench!(tiny_passthrough, passthrough, PassThroughHasher);
+    tiny_bench!(tiny_fnv1a64, fnv1a64, FNV1aHasher64);
 
     w32_bench!(w32_10_default, DefaultHasher, 10);
     w32_bench!(w32_10_djb2, DJB2Hasher, 10);
@@ -856,6 +945,7 @@ mod benchmarks {
     w32_bench!(w32_10_oaat, OAATHasher, 10);
     w32_bench!(w32_10_lookup3, Lookup3Hasher, 10);
     w32_bench!(w32_10_passthrough, PassThroughHasher, 10);
+    w32_bench!(w32_10_fnv1a64, FNV1aHasher64, 10);
 
     w32_bench!(w32_100_default, DefaultHasher, 100);
     w32_bench!(w32_100_djb2, DJB2Hasher, 100);
@@ -864,6 +954,7 @@ mod benchmarks {
     w32_bench!(w32_100_oaat, OAATHasher, 100);
     w32_bench!(w32_100_lookup3, Lookup3Hasher, 100);
     w32_bench!(w32_100_passthrough, PassThroughHasher, 100);
+    w32_bench!(w32_100_fnv1a64, FNV1aHasher64, 100);
 
     w32_bench!(w32_1000_default, DefaultHasher, 1000);
     w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
@@ -872,6 +963,7 @@ mod benchmarks {
     w32_bench!(w32_1000_oaat, OAATHasher, 1000);
     w32_bench!(w32_1000_lookup3, Lookup3Hasher, 1000);
     w32_bench!(w32_1000_passthrough, PassThroughHasher, 1000);
+    w32_bench!(w32_1000_fnv1a64, FNV1aHasher64, 1000);
 
     w64_bench!(w64_10_default, DefaultHasher, 10);
     w64_bench!(w64_10_djb2, DJB2Hasher, 10);
@@ -880,6 +972,7 @@ mod benchmarks {
     w64_bench!(w64_10_oaat, OAATHasher, 10);
     w64_bench!(w64_10_lookup3, Lookup3Hasher, 10);
     w64_bench!(w64_10_passthrough, PassThroughHasher, 10);
+    w64_bench!(w64_10_fnv1a64, FNV1aHasher64, 10);
 
     w64_bench!(w64_100_default, DefaultHasher, 100);
     w64_bench!(w64_100_djb2, DJB2Hasher, 100);
@@ -888,6 +981,7 @@ mod benchmarks {
     w64_bench!(w64_100_oaat, OAATHasher, 100);
     w64_bench!(w64_100_lookup3, Lookup3Hasher, 100);
     w64_bench!(w64_100_passthrough, PassThroughHasher, 100);
+    w64_bench!(w64_100_fnv1a64, FNV1aHasher64, 100);
 
     w64_bench!(w64_1000_default, DefaultHasher, 1000);
     w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
@@ -896,6 +990,7 @@ mod benchmarks {
     w64_bench!(w64_1000_oaat, OAATHasher, 1000);
     w64_bench!(w64_1000_lookup3, Lookup3Hasher, 1000);
     w64_bench!(w64_1000_passthrough, PassThroughHasher, 1000);
+    w64_bench!(w64_1000_fnv1a64, FNV1aHasher64, 1000);
 
     fn read_words() -> Vec<String> {
         use std::fs::File;
@@ -932,6 +1027,7 @@ mod benchmarks {
     words_bench!(words1000_oaat, OAATHasher, 1000);
     words_bench!(words1000_lookup3, Lookup3Hasher, 1000);
     words_bench!(words1000_passthrough, PassThroughHasher, 1000);
+    words_bench!(words1000_fnv1a64, FNV1aHasher64, 1000);
 
     macro_rules! file_bench {
         ($name:ident, $hasher:ident, $fcn:ident) => {
@@ -952,4 +1048,6 @@ mod benchmarks {
     file_bench!(file_oaat, OAATHasher, oaatx);
     file_bench!(file_lookup3, Lookup3Hasher, lookup3x);
     file_bench!(file_passthrough, PassThroughHasher, passthroughx);
+    file_bench!(file_fnv1a64, FNV1aHasher64, fnv1a64x);
+    file_bench!(file_fnv1a32, FNV1aHasher32, fnv1a32x);
 }
