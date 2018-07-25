@@ -1,27 +1,11 @@
+extern crate rand;
 extern crate hashers;
+
+mod samples;
 
 // See
 // - https://www.itl.nist.gov/div898/handbook/eda/section3/eda35g.htm
 // - https://onlinecourses.science.psu.edu/stat414/node/322/
-
-fn word_samples() -> Vec<Vec<u8>> {
-    use std::fs::File;
-    use std::io::BufReader;
-    use std::io::prelude::*;
-
-    let file = File::open("./data/words.txt").expect("cannot open words.txt");
-    BufReader::new(file)
-        .lines()
-        .map(|l| l.expect("bad read"))
-        .map(|w| w.as_bytes().to_vec())
-        .collect()
-}
-
-fn generated_samples(n: usize, s: usize) -> Vec<Vec<u8>> {
-    (0..n)
-        .map(|v| format!("a{:0width$}", v, width = s).as_bytes().to_vec())
-        .collect()
-}
 
 fn do_hashes(fcn: fn(&[u8]) -> u64, data: &[Vec<u8>]) -> Vec<u64> {
     let mut res: Vec<u64> = data.iter().map(|elt| fcn(elt)).collect();
@@ -50,25 +34,23 @@ fn d(samples: &[u64]) -> f64 {
 }
 
 fn print_ds(sample: &str, hash: &str, d: f64) {
-    println!("{}/{} {}", sample, hash, d);
+    println!("{} {} {}", sample, hash, d);
+}
+
+fn run_sample(name: &str, samples: &[Vec<u8>]) {
+    print_ds(name, "null    ", d(&do_hashes(hashers::null::null, samples)));
+    print_ds(name, "passthru", d(&do_hashes(hashers::null::passthrough, samples)));
+    print_ds(name, "default ", d(&do_hashes(hashers::builtin::default, samples)));
+    print_ds(name, "loselose", d(&do_hashes(hashers::oz::loselose, samples)));
+    print_ds(name, "sdbm    ", d(&do_hashes(hashers::oz::sdbm, samples)));
+    print_ds(name, "djb2    ", d(&do_hashes(hashers::oz::djb2, samples)));
+    print_ds(name, "oaat    ", d(&do_hashes(hashers::jenkins::oaat, samples)));
+    print_ds(name, "lookup3 ", d(&do_hashes(hashers::jenkins::lookup3, samples)));
 }
 
 fn main() {
-    print_ds("word_samples", "null    ", d(&do_hashes(hashers::null::null, &word_samples())));
-    print_ds("word_samples", "passthru", d(&do_hashes(hashers::null::passthrough, &word_samples())));
-    print_ds("word_samples", "default ", d(&do_hashes(hashers::builtin::default, &word_samples())));
-    print_ds("word_samples", "loselose", d(&do_hashes(hashers::oz::loselose, &word_samples())));
-    print_ds("word_samples", "sdbm    ", d(&do_hashes(hashers::oz::sdbm, &word_samples())));
-    print_ds("word_samples", "djb2    ", d(&do_hashes(hashers::oz::djb2, &word_samples())));
-    print_ds("word_samples", "oaat    ", d(&do_hashes(hashers::jenkins::oaat, &word_samples())));
-    print_ds("word_samples", "lookup3 ", d(&do_hashes(hashers::jenkins::lookup3, &word_samples())));
-
-    print_ds("generated   ", "null    ", d(&do_hashes(hashers::null::null, &generated_samples(10000, 6))));
-    print_ds("generated   ", "passthru", d(&do_hashes(hashers::null::passthrough, &generated_samples(10000, 6))));
-    print_ds("generated   ", "default ", d(&do_hashes(hashers::builtin::default, &generated_samples(10000, 6))));
-    print_ds("generated   ", "loselose", d(&do_hashes(hashers::oz::loselose, &generated_samples(10000, 6))));
-    print_ds("generated   ", "sdbm    ", d(&do_hashes(hashers::oz::sdbm, &generated_samples(10000, 6))));
-    print_ds("generated   ", "djb2    ", d(&do_hashes(hashers::oz::djb2, &generated_samples(10000, 6))));
-    print_ds("generated   ", "oaat    ", d(&do_hashes(hashers::jenkins::oaat, &generated_samples(10000, 6))));
-    print_ds("generated   ", "lookup3 ", d(&do_hashes(hashers::jenkins::lookup3, &generated_samples(10000, 6))));
+    run_sample("random      ", &samples::random_samples(&mut samples::uniform(), 1000, 6));
+    run_sample("alphanumeric", &samples::alphanumeric_samples(10000, 6));
+    run_sample("generated   ", &samples::generated_samples(10000, 6));
+    run_sample("word_samples", &samples::word_samples());
 }
