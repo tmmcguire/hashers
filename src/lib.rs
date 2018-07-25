@@ -99,12 +99,7 @@ pub mod null {
         }
     }
 
-    impl Default for PassThroughHasher {
-        fn default() -> PassThroughHasher {
-            PassThroughHasher(0)
-        }
-    }
-
+    default_for_constant!(PassThroughHasher, 0);
     hasher_to_fcn!(passthrough, PassThroughHasher);
 }
 
@@ -164,8 +159,6 @@ pub mod oz {
     /// > 0x21, decimal 33) (you saw that one coming, yes?).
     pub struct DJB2Hasher(Wrapping<u64>);
 
-    default_for_constant!(DJB2Hasher, Wrapping(5381));
-
     impl Hasher for DJB2Hasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -180,6 +173,7 @@ pub mod oz {
         }
     }
 
+    default_for_constant!(DJB2Hasher, Wrapping(5381));
     hasher_to_fcn!(djb2, DJB2Hasher);
 
     // ------------------------------------
@@ -218,8 +212,6 @@ pub mod oz {
     /// > algorithms used in berkeley db (see sleepycat) and elsewhere.
     pub struct SDBMHasher(Wrapping<u64>);
 
-    default_for_constant!(SDBMHasher, Wrapping(0));
-
     impl Hasher for SDBMHasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -234,6 +226,7 @@ pub mod oz {
         }
     }
 
+    default_for_constant!(SDBMHasher, Wrapping(0));
     hasher_to_fcn!(sdbm, SDBMHasher);
 
     // ------------------------------------
@@ -271,8 +264,6 @@ pub mod oz {
     /// > sigh. [see also: tpop]
     pub struct LoseLoseHasher(Wrapping<u64>);
 
-    default_for_constant!(LoseLoseHasher, Wrapping(0));
-
     impl Hasher for LoseLoseHasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -287,6 +278,7 @@ pub mod oz {
         }
     }
 
+    default_for_constant!(LoseLoseHasher, Wrapping(0));
     hasher_to_fcn!(loselose, LoseLoseHasher);
 
     // ------------------------------------
@@ -334,8 +326,6 @@ pub mod jenkins {
     /// > that was sufficient for his purpose.
     pub struct OAATHasher(Wrapping<u64>);
 
-    default_for_constant!(OAATHasher, Wrapping(0));
-
     impl Hasher for OAATHasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -356,6 +346,7 @@ pub mod jenkins {
         }
     }
 
+    default_for_constant!(OAATHasher, Wrapping(0));
     hasher_to_fcn!(oaat, OAATHasher);
 
     // ------------------------------------
