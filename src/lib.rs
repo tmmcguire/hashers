@@ -610,6 +610,24 @@ pub mod jenkins {
         align - (ptr as usize & (align - 1))
     }
 
+    /// Load an integer of the desired type from a byte stream, in LE order. Uses
+    /// `copy_nonoverlapping` to let the compiler generate the most efficient way
+    /// to load it from a possibly unaligned address.
+    ///
+    /// Unsafe because: unchecked indexing at i..i+size_of(int_ty)
+    macro_rules! load_int_le {
+        ($buf:expr, $i:expr, $int_ty:ident) => {{
+            debug_assert!($i + mem::size_of::<$int_ty>() <= $buf.len());
+            let mut data = 0 as $int_ty;
+            ptr::copy_nonoverlapping(
+                $buf.get_unchecked($i),
+                &mut data as *mut _ as *mut u8,
+                mem::size_of::<$int_ty>(),
+            );
+            data.to_le()
+        }};
+    }
+
     impl Hasher for Lookup3Hasher {
         #[inline]
         fn finish(&self) -> u64 {
