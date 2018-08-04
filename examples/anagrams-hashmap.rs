@@ -8,7 +8,7 @@ use std::hash::{BuildHasher, BuildHasherDefault, Hasher};
 use std::io::{BufRead, BufReader};
 use std::time::Instant;
 
-use hashers::{builtin, fibonacci, fnv, jenkins, oz};
+use hashers::{builtin, fibonacci, fnv, fx_hash, jenkins, oz};
 
 pub mod combinations;
 
@@ -93,8 +93,14 @@ fn main() {
     time::<jenkins::Lookup3Hasher>("lookup3", baseline);
     time::<fnv::FNV1aHasher32>("fnv-1a 32", baseline);
     time::<fnv::FNV1aHasher64>("fnv-1a 64", baseline);
+    time::<fx_hash::FxHasher>("fxhash", baseline);
+    time::<fx_hash::FxHasher32>("fxhash32", baseline);
+    time::<fx_hash::FxHasher64>("fxhash64", baseline);
     time::<fibonacci::FibonacciWrapper<oz::DJB2Hasher>>("fibo djb2", baseline);
     time::<fibonacci::FibonacciWrapper<oz::SDBMHasher>>("fibo sdbm", baseline);
     time::<fibonacci::FibonacciWrapper<jenkins::OAATHasher>>("fibo oaat", baseline);
     time::<fibonacci::FibonacciWrapper<jenkins::Lookup3Hasher>>("fibo lookup3", baseline);
+    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher>>("fibo fxhash", baseline);
+    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher32>>("fibo fxhash32", baseline);
+    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher64>>("fibo fxhash64", baseline);
 }

@@ -10,6 +10,7 @@
 #![feature(test)]
 
 extern crate test;
+extern crate fxhash;
 
 // ====================================
 // Utilities
@@ -93,6 +94,15 @@ pub mod builtin {
         default,
         DefaultHasher
     );
+}
+
+pub mod fx_hash {
+    use std::hash::Hasher;
+    pub use fxhash::{FxHasher,FxHasher32,FxHasher64};
+
+    hasher_to_fcn!(fxhash, FxHasher);
+    hasher_to_fcn!(fxhash32, FxHasher32);
+    hasher_to_fcn!(fxhash64, FxHasher64);
 }
 
 /// Poor Hashers used for testing purposes.
@@ -224,6 +234,7 @@ mod benchmarks {
     use super::jenkins::*;
     use super::null::*;
     use super::oz::*;
+    use super::fx_hash::*;
     use std::collections::hash_map::DefaultHasher;
     use std::hash::Hasher;
     use test::{black_box, Bencher};
@@ -237,6 +248,18 @@ mod benchmarks {
             }
         };
     }
+
+    tiny_bench!(tiny_default, defaulthasher, DefaultHasher);
+    tiny_bench!(tiny_djb2, djb2, DJB2Hasher);
+    tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
+    tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
+    tiny_bench!(tiny_oaat, oaat, OAATHasher);
+    tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
+    tiny_bench!(tiny_passthrough, passthrough, PassThroughHasher);
+    tiny_bench!(tiny_fnv1a64, fnv1a64, FNV1aHasher64);
+    tiny_bench!(tiny_fxhash, fxhash, FxHasher);
+    tiny_bench!(tiny_fxhash32, fxhash32, FxHasher32);
+    tiny_bench!(tiny_fxhash64, fxhash64, FxHasher64);
 
     macro_rules! w32_bench {
         ($name:ident, $hasher:ident, $count:expr) => {
@@ -253,6 +276,36 @@ mod benchmarks {
         };
     }
 
+    w32_bench!(w32_10_default, DefaultHasher, 10);
+    w32_bench!(w32_10_djb2, DJB2Hasher, 10);
+    w32_bench!(w32_10_sdbm, SDBMHasher, 10);
+    w32_bench!(w32_10_loselose, LoseLoseHasher, 10);
+    w32_bench!(w32_10_oaat, OAATHasher, 10);
+    w32_bench!(w32_10_lookup3, Lookup3Hasher, 10);
+    w32_bench!(w32_10_passthrough, PassThroughHasher, 10);
+    w32_bench!(w32_10_fnv1a64, FNV1aHasher64, 10);
+    w32_bench!(w32_10_fxhash, FxHasher, 10);
+
+    w32_bench!(w32_100_default, DefaultHasher, 100);
+    w32_bench!(w32_100_djb2, DJB2Hasher, 100);
+    w32_bench!(w32_100_sdbm, SDBMHasher, 100);
+    w32_bench!(w32_100_loselose, LoseLoseHasher, 100);
+    w32_bench!(w32_100_oaat, OAATHasher, 100);
+    w32_bench!(w32_100_lookup3, Lookup3Hasher, 100);
+    w32_bench!(w32_100_passthrough, PassThroughHasher, 100);
+    w32_bench!(w32_100_fnv1a64, FNV1aHasher64, 100);
+    w32_bench!(w32_100_fxhash, FxHasher, 100);
+
+    w32_bench!(w32_1000_default, DefaultHasher, 1000);
+    w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
+    w32_bench!(w32_1000_sdbm, SDBMHasher, 1000);
+    w32_bench!(w32_1000_loselose, LoseLoseHasher, 1000);
+    w32_bench!(w32_1000_oaat, OAATHasher, 1000);
+    w32_bench!(w32_1000_lookup3, Lookup3Hasher, 1000);
+    w32_bench!(w32_1000_passthrough, PassThroughHasher, 1000);
+    w32_bench!(w32_1000_fnv1a64, FNV1aHasher64, 1000);
+    w32_bench!(w32_1000_fxhash, FxHasher, 1000);
+
     macro_rules! w64_bench {
         ($name:ident, $hasher:ident, $count:expr) => {
             #[bench]
@@ -268,42 +321,6 @@ mod benchmarks {
         };
     }
 
-    tiny_bench!(tiny_default, defaulthasher, DefaultHasher);
-    tiny_bench!(tiny_djb2, djb2, DJB2Hasher);
-    tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
-    tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
-    tiny_bench!(tiny_oaat, oaat, OAATHasher);
-    tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
-    tiny_bench!(tiny_passthrough, passthrough, PassThroughHasher);
-    tiny_bench!(tiny_fnv1a64, fnv1a64, FNV1aHasher64);
-
-    w32_bench!(w32_10_default, DefaultHasher, 10);
-    w32_bench!(w32_10_djb2, DJB2Hasher, 10);
-    w32_bench!(w32_10_sdbm, SDBMHasher, 10);
-    w32_bench!(w32_10_loselose, LoseLoseHasher, 10);
-    w32_bench!(w32_10_oaat, OAATHasher, 10);
-    w32_bench!(w32_10_lookup3, Lookup3Hasher, 10);
-    w32_bench!(w32_10_passthrough, PassThroughHasher, 10);
-    w32_bench!(w32_10_fnv1a64, FNV1aHasher64, 10);
-
-    w32_bench!(w32_100_default, DefaultHasher, 100);
-    w32_bench!(w32_100_djb2, DJB2Hasher, 100);
-    w32_bench!(w32_100_sdbm, SDBMHasher, 100);
-    w32_bench!(w32_100_loselose, LoseLoseHasher, 100);
-    w32_bench!(w32_100_oaat, OAATHasher, 100);
-    w32_bench!(w32_100_lookup3, Lookup3Hasher, 100);
-    w32_bench!(w32_100_passthrough, PassThroughHasher, 100);
-    w32_bench!(w32_100_fnv1a64, FNV1aHasher64, 100);
-
-    w32_bench!(w32_1000_default, DefaultHasher, 1000);
-    w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
-    w32_bench!(w32_1000_sdbm, SDBMHasher, 1000);
-    w32_bench!(w32_1000_loselose, LoseLoseHasher, 1000);
-    w32_bench!(w32_1000_oaat, OAATHasher, 1000);
-    w32_bench!(w32_1000_lookup3, Lookup3Hasher, 1000);
-    w32_bench!(w32_1000_passthrough, PassThroughHasher, 1000);
-    w32_bench!(w32_1000_fnv1a64, FNV1aHasher64, 1000);
-
     w64_bench!(w64_10_default, DefaultHasher, 10);
     w64_bench!(w64_10_djb2, DJB2Hasher, 10);
     w64_bench!(w64_10_sdbm, SDBMHasher, 10);
@@ -312,6 +329,7 @@ mod benchmarks {
     w64_bench!(w64_10_lookup3, Lookup3Hasher, 10);
     w64_bench!(w64_10_passthrough, PassThroughHasher, 10);
     w64_bench!(w64_10_fnv1a64, FNV1aHasher64, 10);
+    w64_bench!(w64_10_fxhash, FxHasher, 10);
 
     w64_bench!(w64_100_default, DefaultHasher, 100);
     w64_bench!(w64_100_djb2, DJB2Hasher, 100);
@@ -321,6 +339,7 @@ mod benchmarks {
     w64_bench!(w64_100_lookup3, Lookup3Hasher, 100);
     w64_bench!(w64_100_passthrough, PassThroughHasher, 100);
     w64_bench!(w64_100_fnv1a64, FNV1aHasher64, 100);
+    w64_bench!(w64_100_fxhash, FxHasher, 100);
 
     w64_bench!(w64_1000_default, DefaultHasher, 1000);
     w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
@@ -330,6 +349,7 @@ mod benchmarks {
     w64_bench!(w64_1000_lookup3, Lookup3Hasher, 1000);
     w64_bench!(w64_1000_passthrough, PassThroughHasher, 1000);
     w64_bench!(w64_1000_fnv1a64, FNV1aHasher64, 1000);
+    w64_bench!(w64_1000_fxhash, FxHasher, 1000);
 
     fn read_words() -> Vec<String> {
         use std::fs::File;
@@ -367,6 +387,7 @@ mod benchmarks {
     words_bench!(words1000_lookup3, Lookup3Hasher, 1000);
     words_bench!(words1000_passthrough, PassThroughHasher, 1000);
     words_bench!(words1000_fnv1a64, FNV1aHasher64, 1000);
+    words_bench!(words1000_fxhash, FxHasher, 1000);
 
     macro_rules! file_bench {
         ($name:ident, $hasher:ident, $fcn:ident) => {
@@ -389,4 +410,5 @@ mod benchmarks {
     file_bench!(file_passthrough, PassThroughHasher, passthroughx);
     file_bench!(file_fnv1a64, FNV1aHasher64, fnv1a64x);
     file_bench!(file_fnv1a32, FNV1aHasher32, fnv1a32x);
+    file_bench!(file_fxhash, FxHasher, fxhashx);
 }
