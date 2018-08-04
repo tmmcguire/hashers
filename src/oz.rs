@@ -50,18 +50,18 @@ use std::num::Wrapping;
 /// > has a easily detectable flaws. For example, there's a 3-into-2
 /// > funnel that 0x0021 and 0x0100 both have the same hash (hex
 /// > 0x21, decimal 33) (you saw that one coming, yes?).
-pub struct DJB2Hasher(Wrapping<u64>);
+pub struct DJB2Hasher(Wrapping<u32>);
 
 impl Hasher for DJB2Hasher {
     #[inline]
     fn finish(&self) -> u64 {
-        (self.0).0
+        (self.0).0 as u64
     }
 
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         for byte in bytes.iter() {
-            self.0 = self.0 + (self.0 << 5) ^ Wrapping(*byte as u64);
+            self.0 = self.0 + (self.0 << 5) ^ Wrapping(*byte as u32);
         }
     }
 }
@@ -107,18 +107,18 @@ mod djb2_tests {
 /// > was picked out of thin air while experimenting with different
 /// > constants, and turns out to be a prime. this is one of the
 /// > algorithms used in berkeley db (see sleepycat) and elsewhere.
-pub struct SDBMHasher(Wrapping<u64>);
+pub struct SDBMHasher(Wrapping<u32>);
 
 impl Hasher for SDBMHasher {
     #[inline]
     fn finish(&self) -> u64 {
-        (self.0).0
+        (self.0).0 as u64
     }
 
     #[inline]
     fn write(&mut self, bytes: &[u8]) {
         for byte in bytes.iter() {
-            self.0 = Wrapping(*byte as u64) + (self.0 << 6) + (self.0 << 16) - self.0;
+            self.0 = Wrapping(*byte as u32) + (self.0 << 6) + (self.0 << 16) - self.0;
         }
     }
 }

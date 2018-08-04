@@ -1,8 +1,10 @@
+// The chi^2 test for Hashers.
+
 extern crate rand;
 
 extern crate hashers;
 
-use hashers::{builtin, fx_hash, jenkins, null, oz};
+use hashers::{builtin, fnv, fx_hash, jenkins, null, oz};
 
 mod samples;
 
@@ -51,6 +53,8 @@ fn do_hashes(samples: &[Vec<u8>]) {
     println!("OAAT:     {}", chi2(&samples, jenkins::oaat, 7));
     println!("Pass:     {}", chi2(&samples, null::passthrough, 7));
     println!("sdbm:     {}", chi2(&samples, oz::sdbm, 7));
+    println!("fnv1a 32: {}", chi2(&samples, fnv::fnv1a32, 7));
+    println!("fnv1a 64  {}", chi2(&samples, fnv::fnv1a64, 7));
     println!("fxhash:   {}", chi2(&samples, fx_hash::fxhash, 7));
     println!("fxhash32: {}", chi2(&samples, fx_hash::fxhash32, 7));
     println!("fxhash64: {}", chi2(&samples, fx_hash::fxhash64, 7));

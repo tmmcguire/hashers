@@ -298,22 +298,20 @@ impl Hasher for Lookup3Hasher {
         c += self.pb;
 
         if cfg!(target_endian = "little") && offset_to_align(bytes.as_ptr(), 4) == 0 {
-            // TODO: Use exact_chunks?
             for chunk in bytes.chunks(12) {
                 if chunk.len() == 12 {
+                    // true for all chunks except the last
                     a += Wrapping(load_int_le!(chunk, 0, u32));
                     b += Wrapping(load_int_le!(chunk, 4, u32));
                     c += Wrapping(load_int_le!(chunk, 8, u32));
                     mix(&mut a, &mut b, &mut c);
                 } else if chunk.len() >= 8 {
-                    let (_, bs) = chunk.split_at(8);
                     a += Wrapping(load_int_le!(chunk, 0, u32));
                     b += Wrapping(load_int_le!(chunk, 4, u32));
-                    c += shift_add(bs);
+                    c += shift_add(&chunk[8..]);
                 } else if chunk.len() >= 4 {
-                    let (_, bs) = chunk.split_at(4);
                     a += Wrapping(load_int_le!(chunk, 0, u32));
-                    b += shift_add(bs);
+                    b += shift_add(&chunk[4..]);
                 } else {
                     a += shift_add(chunk);
                 }
@@ -321,6 +319,7 @@ impl Hasher for Lookup3Hasher {
         } else if cfg!(target_endian = "little") && offset_to_align(bytes.as_ptr(), 2) == 0 {
             for chunk in bytes.chunks(12) {
                 if chunk.len() == 12 {
+                    // true for all chunks except the last
                     a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         + Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         << 16;
@@ -332,20 +331,18 @@ impl Hasher for Lookup3Hasher {
                         << 16;
                     mix(&mut a, &mut b, &mut c);
                 } else if chunk.len() >= 8 {
-                    let (_, bs) = chunk.split_at(8);
                     a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         + Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         << 16;
                     b += Wrapping(load_int_le!(chunk, 4, u16) as u32)
                         + Wrapping(load_int_le!(chunk, 6, u16) as u32)
                         << 16;
-                    c += shift_add(bs);
+                    c += shift_add(&chunk[8..]);
                 } else if chunk.len() >= 4 {
-                    let (_, bs) = chunk.split_at(4);
                     a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         + Wrapping(load_int_le!(chunk, 0, u16) as u32)
                         << 16;
-                    b += shift_add(bs);
+                    b += shift_add(&chunk[4..]);
                 } else {
                     a += shift_add(chunk);
                 }
@@ -356,23 +353,17 @@ impl Hasher for Lookup3Hasher {
             // haven't bothered here."
             for chunk in bytes.chunks(12) {
                 if chunk.len() == 12 {
-                    let (hunk, rest) = chunk.split_at(4);
-                    a += shift_add(hunk);
-                    let (hunk, rest) = rest.split_at(4);
-                    b += shift_add(hunk);
-                    let (hunk, _) = rest.split_at(4);
-                    c += shift_add(hunk);
+                    a += shift_add(&chunk[..4]);
+                    b += shift_add(&chunk[4..8]);
+                    c += shift_add(&chunk[8..]);
                     mix(&mut a, &mut b, &mut c);
                 } else if chunk.len() >= 8 {
-                    let (hunk, rest) = chunk.split_at(4);
-                    a += shift_add(hunk);
-                    let (hunk, rest) = rest.split_at(4);
-                    b += shift_add(hunk);
-                    c += shift_add(rest);
+                    a += shift_add(&chunk[..4]);
+                    b += shift_add(&chunk[4..8]);
+                    c += shift_add(&chunk[8..]);
                 } else if chunk.len() >= 4 {
-                    let (hunk, rest) = chunk.split_at(4);
-                    a += shift_add(hunk);
-                    b += shift_add(rest);
+                    a += shift_add(&chunk[..4]);
+                    b += shift_add(&chunk[4..]);
                 } else {
                     a += shift_add(chunk);
                 }

@@ -1,32 +1,41 @@
 #![feature(duration_as_u128)]
 
+// **WARNING:** This program must be compiled in --release mode, with optimizations, or it will
+// take a very, very long time.
+
 extern crate hashers;
 
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::hash::{BuildHasher, BuildHasherDefault, Hasher};
 use std::io::{BufRead, BufReader};
-use std::time::Instant;
+use std::{fs, time};
 
 use hashers::{builtin, fibonacci, fnv, fx_hash, jenkins, oz};
 
 pub mod combinations;
 
+/// Convert a word to a vector of sorted bytes.
 fn get_letters(s: &str) -> Vec<u8> {
     let mut t: Vec<char> = s.chars().collect();
     t.sort();
     return t.iter().map(|&ch| ch as u8).collect();
 }
 
+/// Split a line into a vector of space-separated words.
 fn split_words(s: &str) -> Vec<String> {
     s.split(" ").map(|w| w.to_string()).collect()
 }
 
+/// A HashMap using the Hasher provided by BuildHasher BH.
 type Dictionary<BH> = HashMap<Vec<u8>, Vec<String>, BH>;
+/// A HashSet of strings using the Hasher provided by BuildHasher BH.
+/// 
+/// Not to be confused with a swing set.
 type StringSet<BH> = HashSet<String, BH>;
 
+/// Read the anagram dictionary into a HashMap.
 fn load_dictionary<H: Default + Hasher>() -> Dictionary<BuildHasherDefault<H>> {
-    let file = match File::open("./data/anadict.txt") {
+    let file = match fs::File::open("./data/anadict.txt") {
         Ok(f) => f,
         Err(e) => panic!(e),
     };
@@ -41,6 +50,7 @@ fn load_dictionary<H: Default + Hasher>() -> Dictionary<BuildHasherDefault<H>> {
     return map;
 }
 
+/// Search all combinations of letters, returning a set of the matching words.
 fn search<H: Default + Hasher, BH: BuildHasher>(
     letters: &[u8],
     dictionary: &Dictionary<BH>,
@@ -48,6 +58,7 @@ fn search<H: Default + Hasher, BH: BuildHasher>(
     let mut set = HashSet::default();
     for i in 0..letters.len() + 1 {
         let mut key: Vec<u8> = vec![0; i];
+        // note the internal iterator
         combinations::each_combination(letters, i, |combo| {
             for j in 0..combo.len() {
                 key[j] = combo[j];
@@ -65,6 +76,7 @@ fn search<H: Default + Hasher, BH: BuildHasher>(
     return set;
 }
 
+/// Return the number of words found using a particular string.
 fn do_search<H: Default + Hasher>() -> usize {
     let letters = get_letters("asdwtribnowplfglewhqagnbe");
     let dictionary = load_dictionary::<H>();
@@ -72,10 +84,13 @@ fn do_search<H: Default + Hasher>() -> usize {
     set.len()
 }
 
+/// Measure and print the time used by a search, using Hasher H.
+///
+/// Also returns the duration, to be used as a baseline for later searchs.
 fn time<H: Default + Hasher>(title: &str, baseline: f64) -> f64 {
-    let start = Instant::now();
+    let start = time::Instant::now();
     assert_eq!(do_search::<H>(), 7440);
-    let duration = Instant::now().duration_since(start);
+    let duration = time::Instant::now().duration_since(start);
     if baseline > 0.0 {
         let percent = ((duration.as_micros() as f64 / baseline) * 1000.0).round() / 10.0;
         println!("{} {:?} ({}%)", title, duration, percent);

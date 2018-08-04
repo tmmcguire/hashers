@@ -9,8 +9,8 @@
 
 #![feature(test)]
 
-extern crate test;
 extern crate fxhash;
+extern crate test;
 
 // ====================================
 // Utilities
@@ -19,7 +19,12 @@ extern crate fxhash;
 /// `copy_nonoverlapping` to let the compiler generate the most efficient way
 /// to load it from a possibly unaligned address.
 ///
-/// Unsafe because: unchecked indexing at i..i+size_of(int_ty)
+/// Unsafe because: unchecked indexing at `i..i+size_of<int_ty>`.
+///
+/// **WARNING:** The user is responsible for ensuring that
+/// `$buf[$i..$i+size_of<$int_ty>]` is valid.
+///
+/// Found this on the 'net somewhere.
 macro_rules! load_int_le {
     ($buf:expr, $i:expr, $int_ty:ident) => {{
         unsafe {
@@ -51,6 +56,7 @@ macro_rules! load_int_le {
 // Create an implementation of Default for a simple type initialized
 // with a constant value.
 macro_rules! default_for_constant {
+
     ($(#[$attr:meta])* $name:ident, $default:expr) => {
         $(#[$attr])*
         impl Default for $name {
@@ -60,10 +66,12 @@ macro_rules! default_for_constant {
             }
         }
     };
+
 }
 
 // Given a Hasher, create a single-use hash function.
 macro_rules! hasher_to_fcn {
+
     ($(#[$attr:meta])* $name:ident, $hasher:ident) => {
         $(#[$attr])*
         #[inline]
@@ -73,14 +81,15 @@ macro_rules! hasher_to_fcn {
             hasher.finish()
         }
     };
+
 }
 
 // ====================================
 // Hashing modules
 
-pub mod oz;
-pub mod jenkins;
 pub mod fibonacci;
+pub mod jenkins;
+pub mod oz;
 
 /// For easy access, reexport the built-in hash map's DefaultHasher,
 /// including a matching one-stop function.
@@ -97,8 +106,8 @@ pub mod builtin {
 }
 
 pub mod fx_hash {
+    pub use fxhash::{FxHasher, FxHasher32, FxHasher64};
     use std::hash::Hasher;
-    pub use fxhash::{FxHasher,FxHasher32,FxHasher64};
 
     hasher_to_fcn!(fxhash, FxHasher);
     hasher_to_fcn!(fxhash32, FxHasher32);
@@ -231,10 +240,10 @@ pub mod fnv {
 #[cfg(test)]
 mod benchmarks {
     use super::fnv::*;
+    use super::fx_hash::*;
     use super::jenkins::*;
     use super::null::*;
     use super::oz::*;
-    use super::fx_hash::*;
     use std::collections::hash_map::DefaultHasher;
     use std::hash::Hasher;
     use test::{black_box, Bencher};
