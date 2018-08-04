@@ -1,3 +1,5 @@
+#![feature(duration_as_u128)]
+
 extern crate hashers;
 
 use std::collections::{HashMap, HashSet};
@@ -70,22 +72,29 @@ fn do_search<H: Default + Hasher>() -> usize {
     set.len()
 }
 
-fn time<H: Default + Hasher>(title: &str) {
+fn time<H: Default + Hasher>(title: &str, baseline: f64) -> f64 {
     let start = Instant::now();
     assert_eq!(do_search::<H>(), 7440);
-    println!("{} {:?}", title, Instant::now().duration_since(start));
+    let duration = Instant::now().duration_since(start);
+    if baseline > 0.0 {
+        let percent = ((duration.as_micros() as f64 / baseline) * 1000.0).round() / 10.0;
+        println!("{} {:?} ({}%)", title, duration, percent);
+    } else {
+        println!("{} {:?}", title, duration);
+    }
+    duration.as_micros() as f64
 }
 
 fn main() {
-    time::<builtin::DefaultHasher>("default");
-    time::<oz::DJB2Hasher>("djb2");
-    time::<oz::SDBMHasher>("sdbm");
-    time::<jenkins::OAATHasher>("oaat");
-    time::<jenkins::Lookup3Hasher>("lookup3");
-    time::<fnv::FNV1aHasher32>("fnv-1a 32");
-    time::<fnv::FNV1aHasher64>("fnv-1a 64");
-    time::<fibonacci::FibonacciWrapper<oz::DJB2Hasher>>("fibo djb2");
-    time::<fibonacci::FibonacciWrapper<oz::SDBMHasher>>("fibo sdbm");
-    time::<fibonacci::FibonacciWrapper<jenkins::OAATHasher>>("fibo oaat");
-    time::<fibonacci::FibonacciWrapper<jenkins::Lookup3Hasher>>("fibo lookup3");
+    let baseline = time::<builtin::DefaultHasher>("default", 0.0);
+    time::<oz::DJB2Hasher>("djb2", baseline);
+    time::<oz::SDBMHasher>("sdbm", baseline);
+    time::<jenkins::OAATHasher>("oaat", baseline);
+    time::<jenkins::Lookup3Hasher>("lookup3", baseline);
+    time::<fnv::FNV1aHasher32>("fnv-1a 32", baseline);
+    time::<fnv::FNV1aHasher64>("fnv-1a 64", baseline);
+    time::<fibonacci::FibonacciWrapper<oz::DJB2Hasher>>("fibo djb2", baseline);
+    time::<fibonacci::FibonacciWrapper<oz::SDBMHasher>>("fibo sdbm", baseline);
+    time::<fibonacci::FibonacciWrapper<jenkins::OAATHasher>>("fibo oaat", baseline);
+    time::<fibonacci::FibonacciWrapper<jenkins::Lookup3Hasher>>("fibo lookup3", baseline);
 }
