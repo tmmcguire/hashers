@@ -9,11 +9,42 @@
 
 #![feature(test)]
 
-extern crate byteorder;
 extern crate test;
 
 // ====================================
 // Utilities
+
+/// Load an integer of the desired type from a byte stream, in LE order. Uses
+/// `copy_nonoverlapping` to let the compiler generate the most efficient way
+/// to load it from a possibly unaligned address.
+///
+/// Unsafe because: unchecked indexing at i..i+size_of(int_ty)
+macro_rules! load_int_le {
+    ($buf:expr, $i:expr, $int_ty:ident) => {{
+        unsafe {
+            debug_assert!($i + mem::size_of::<$int_ty>() <= $buf.len());
+            let mut data = 0 as $int_ty;
+            ptr::copy_nonoverlapping(
+                $buf.get_unchecked($i),
+                &mut data as *mut _ as *mut u8,
+                mem::size_of::<$int_ty>(),
+            );
+            data.to_le()
+        }
+    }};
+}
+
+// macro_rules! bytes_to {
+//     ($slice:ident, $offset:expr, $dst_ty:ident) => {
+//         unsafe {
+//             *mem::transmute::<*const u8, &$dst_ty>(
+//                 $slice
+//                     .get_unchecked($offset..($offset + mem::size_of::<$dst_ty>()))
+//                     .as_ptr(),
+//             )
+//         }
+//     };
+// }
 
 // Create an implementation of Default for a simple type initialized
 // with a constant value.
@@ -333,9 +364,9 @@ pub mod oz {
 /// https://en.wikipedia.org/wiki/Jenkins_hash_function.
 pub mod jenkins {
     use std::hash::Hasher;
+    use std::mem;
     use std::num::Wrapping;
-
-    use byteorder::{ByteOrder, LittleEndian};
+    use std::ptr;
 
     // ================================
     // one_at_a_time
@@ -610,24 +641,6 @@ pub mod jenkins {
         align - (ptr as usize & (align - 1))
     }
 
-    /// Load an integer of the desired type from a byte stream, in LE order. Uses
-    /// `copy_nonoverlapping` to let the compiler generate the most efficient way
-    /// to load it from a possibly unaligned address.
-    ///
-    /// Unsafe because: unchecked indexing at i..i+size_of(int_ty)
-    macro_rules! load_int_le {
-        ($buf:expr, $i:expr, $int_ty:ident) => {{
-            debug_assert!($i + mem::size_of::<$int_ty>() <= $buf.len());
-            let mut data = 0 as $int_ty;
-            ptr::copy_nonoverlapping(
-                $buf.get_unchecked($i),
-                &mut data as *mut _ as *mut u8,
-                mem::size_of::<$int_ty>(),
-            );
-            data.to_le()
-        }};
-    }
-
     impl Hasher for Lookup3Hasher {
         #[inline]
         fn finish(&self) -> u64 {
@@ -649,24 +662,18 @@ pub mod jenkins {
                 // TODO: Use exact_chunks?
                 for chunk in bytes.chunks(12) {
                     if chunk.len() == 12 {
-                        let mut words: [u32; 3] = [0; 3]; // 3 * (4 bytes) = 12
-                        LittleEndian::read_u32_into(chunk, &mut words);
-                        a += Wrapping(words[0]);
-                        b += Wrapping(words[1]);
-                        c += Wrapping(words[2]);
+                        a += Wrapping(load_int_le!(chunk, 0, u32));
+                        b += Wrapping(load_int_le!(chunk, 4, u32));
+                        c += Wrapping(load_int_le!(chunk, 8, u32));
                         mix(&mut a, &mut b, &mut c);
                     } else if chunk.len() >= 8 {
-                        let (w, bs) = chunk.split_at(8);
-                        let mut words: [u32; 2] = [0; 2]; // 2 * (4 bytes) = 12
-                        LittleEndian::read_u32_into(w, &mut words);
-                        a += Wrapping(words[0]);
-                        b += Wrapping(words[1]);
+                        let (_, bs) = chunk.split_at(8);
+                        a += Wrapping(load_int_le!(chunk, 0, u32));
+                        b += Wrapping(load_int_le!(chunk, 4, u32));
                         c += shift_add(bs);
                     } else if chunk.len() >= 4 {
-                        let (w, bs) = chunk.split_at(4);
-                        let mut words: [u32; 1] = [0; 1]; // 1 * (4 bytes) = 12
-                        LittleEndian::read_u32_into(w, &mut words);
-                        a += Wrapping(words[0]);
+                        let (_, bs) = chunk.split_at(4);
+                        a += Wrapping(load_int_le!(chunk, 0, u32));
                         b += shift_add(bs);
                     } else {
                         a += shift_add(chunk);
@@ -675,24 +682,30 @@ pub mod jenkins {
             } else if cfg!(target_endian = "little") && offset_to_align(bytes.as_ptr(), 2) == 0 {
                 for chunk in bytes.chunks(12) {
                     if chunk.len() == 12 {
-                        let mut words: [u16; 6] = [0; 6]; // 6 * (2 bytes) = 12
-                        LittleEndian::read_u16_into(chunk, &mut words);
-                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
-                        b += Wrapping(words[2] as u32 + (words[3] as u32) << 16);
-                        c += Wrapping(words[4] as u32 + (words[3] as u32) << 16);
+                        a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            << 16;
+                        b += Wrapping(load_int_le!(chunk, 4, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 6, u16) as u32)
+                            << 16;
+                        c += Wrapping(load_int_le!(chunk, 8, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 10, u16) as u32)
+                            << 16;
                         mix(&mut a, &mut b, &mut c);
                     } else if chunk.len() >= 8 {
-                        let (w, bs) = chunk.split_at(8);
-                        let mut words: [u16; 4] = [0; 4]; // 4 * (2 bytes) = 8
-                        LittleEndian::read_u16_into(w, &mut words);
-                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
-                        b += Wrapping(words[2] as u32 + (words[3] as u32) << 16);
+                        let (_, bs) = chunk.split_at(8);
+                        a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            << 16;
+                        b += Wrapping(load_int_le!(chunk, 4, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 6, u16) as u32)
+                            << 16;
                         c += shift_add(bs);
                     } else if chunk.len() >= 4 {
-                        let (w, bs) = chunk.split_at(4);
-                        let mut words: [u16; 2] = [0; 2]; // 2 * (2 bytes) = 4
-                        LittleEndian::read_u16_into(w, &mut words);
-                        a += Wrapping(words[0] as u32 + (words[1] as u32) << 16);
+                        let (_, bs) = chunk.split_at(4);
+                        a += Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            + Wrapping(load_int_le!(chunk, 0, u16) as u32)
+                            << 16;
                         b += shift_add(bs);
                     } else {
                         a += shift_add(chunk);

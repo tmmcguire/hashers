@@ -3,9 +3,6 @@ name = "hashers"
 version = "0.1.0"
 authors = ["Tommy M. McGuire <mcguire@crsr.net>"]
 
-[dependencies]
-byteorder = "1.2.3"
-
 [dev-dependencies]
 rand = "0.5.4"
 
