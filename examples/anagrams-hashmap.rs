@@ -10,7 +10,7 @@ use std::hash::{BuildHasher, BuildHasherDefault, Hasher};
 use std::io::{BufRead, BufReader};
 use std::{fs, time};
 
-use hashers::{builtin, fibonacci, fnv, fx_hash, jenkins, oz};
+use hashers::{builtin, fnv, fx_hash, jenkins, oz};
 
 pub mod combinations;
 
@@ -112,11 +112,4 @@ fn main() {
     time::<fx_hash::FxHasher32>("fxhash32", baseline);
     time::<fx_hash::FxHasher64>("fxhash64", baseline);
     time::<jenkins::spooky_hash::SpookyHasher>("spooky", baseline);
-    time::<fibonacci::FibonacciWrapper<oz::DJB2Hasher>>("fibo djb2", baseline);
-    time::<fibonacci::FibonacciWrapper<oz::SDBMHasher>>("fibo sdbm", baseline);
-    time::<fibonacci::FibonacciWrapper<jenkins::OAATHasher>>("fibo oaat", baseline);
-    time::<fibonacci::FibonacciWrapper<jenkins::Lookup3Hasher>>("fibo lookup3", baseline);
-    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher>>("fibo fxhash", baseline);
-    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher32>>("fibo fxhash32", baseline);
-    time::<fibonacci::FibonacciWrapper<fx_hash::FxHasher64>>("fibo fxhash64", baseline);
 }

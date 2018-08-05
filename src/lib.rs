@@ -87,7 +87,6 @@ macro_rules! hasher_to_fcn {
 // ====================================
 // Hashing modules
 
-pub mod fibonacci;
 pub mod jenkins;
 pub mod oz;
 
