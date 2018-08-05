@@ -242,6 +242,7 @@ mod benchmarks {
     use super::fnv::*;
     use super::fx_hash::*;
     use super::jenkins::*;
+    use super::jenkins::spooky_hash::*;
     use super::null::*;
     use super::oz::*;
     use std::collections::hash_map::DefaultHasher;
@@ -269,6 +270,7 @@ mod benchmarks {
     tiny_bench!(tiny_fxhash, fxhash, FxHasher);
     tiny_bench!(tiny_fxhash32, fxhash32, FxHasher32);
     tiny_bench!(tiny_fxhash64, fxhash64, FxHasher64);
+    tiny_bench!(tiny_spooky, spooky, SpookyHasher);
 
     macro_rules! w32_bench {
         ($name:ident, $hasher:ident, $count:expr) => {
@@ -294,6 +296,7 @@ mod benchmarks {
     w32_bench!(w32_10_passthrough, PassThroughHasher, 10);
     w32_bench!(w32_10_fnv1a64, FNV1aHasher64, 10);
     w32_bench!(w32_10_fxhash, FxHasher, 10);
+    w32_bench!(w32_10_spooky, SpookyHasher, 10);
 
     w32_bench!(w32_100_default, DefaultHasher, 100);
     w32_bench!(w32_100_djb2, DJB2Hasher, 100);
@@ -304,6 +307,7 @@ mod benchmarks {
     w32_bench!(w32_100_passthrough, PassThroughHasher, 100);
     w32_bench!(w32_100_fnv1a64, FNV1aHasher64, 100);
     w32_bench!(w32_100_fxhash, FxHasher, 100);
+    w32_bench!(w32_100_spooky, SpookyHasher, 100);
 
     w32_bench!(w32_1000_default, DefaultHasher, 1000);
     w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
@@ -314,6 +318,7 @@ mod benchmarks {
     w32_bench!(w32_1000_passthrough, PassThroughHasher, 1000);
     w32_bench!(w32_1000_fnv1a64, FNV1aHasher64, 1000);
     w32_bench!(w32_1000_fxhash, FxHasher, 1000);
+    w32_bench!(w32_1000_spooky, SpookyHasher, 1000);
 
     macro_rules! w64_bench {
         ($name:ident, $hasher:ident, $count:expr) => {
@@ -339,6 +344,7 @@ mod benchmarks {
     w64_bench!(w64_10_passthrough, PassThroughHasher, 10);
     w64_bench!(w64_10_fnv1a64, FNV1aHasher64, 10);
     w64_bench!(w64_10_fxhash, FxHasher, 10);
+    w64_bench!(w64_10_spooky, SpookyHasher, 10);
 
     w64_bench!(w64_100_default, DefaultHasher, 100);
     w64_bench!(w64_100_djb2, DJB2Hasher, 100);
@@ -349,6 +355,7 @@ mod benchmarks {
     w64_bench!(w64_100_passthrough, PassThroughHasher, 100);
     w64_bench!(w64_100_fnv1a64, FNV1aHasher64, 100);
     w64_bench!(w64_100_fxhash, FxHasher, 100);
+    w64_bench!(w64_100_spooky, SpookyHasher, 100);
 
     w64_bench!(w64_1000_default, DefaultHasher, 1000);
     w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
@@ -359,6 +366,7 @@ mod benchmarks {
     w64_bench!(w64_1000_passthrough, PassThroughHasher, 1000);
     w64_bench!(w64_1000_fnv1a64, FNV1aHasher64, 1000);
     w64_bench!(w64_1000_fxhash, FxHasher, 1000);
+    w64_bench!(w64_1000_spooky, SpookyHasher, 1000);
 
     fn read_words() -> Vec<String> {
         use std::fs::File;
@@ -397,6 +405,7 @@ mod benchmarks {
     words_bench!(words1000_passthrough, PassThroughHasher, 1000);
     words_bench!(words1000_fnv1a64, FNV1aHasher64, 1000);
     words_bench!(words1000_fxhash, FxHasher, 1000);
+    words_bench!(words1000_spooky, SpookyHasher, 1000);
 
     macro_rules! file_bench {
         ($name:ident, $hasher:ident, $fcn:ident) => {
@@ -420,4 +429,5 @@ mod benchmarks {
     file_bench!(file_fnv1a64, FNV1aHasher64, fnv1a64x);
     file_bench!(file_fnv1a32, FNV1aHasher32, fnv1a32x);
     file_bench!(file_fxhash, FxHasher, fxhashx);
+    file_bench!(file_spooky, SpookyHasher, spookyx);
 }

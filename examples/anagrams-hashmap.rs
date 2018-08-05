@@ -111,6 +111,7 @@ fn main() {
     time::<fx_hash::FxHasher>("fxhash", baseline);
     time::<fx_hash::FxHasher32>("fxhash32", baseline);
     time::<fx_hash::FxHasher64>("fxhash64", baseline);
+    time::<jenkins::spooky_hash::SpookyHasher>("spooky", baseline);
     time::<fibonacci::FibonacciWrapper<oz::DJB2Hasher>>("fibo djb2", baseline);
     time::<fibonacci::FibonacciWrapper<oz::SDBMHasher>>("fibo sdbm", baseline);
     time::<fibonacci::FibonacciWrapper<jenkins::OAATHasher>>("fibo oaat", baseline);

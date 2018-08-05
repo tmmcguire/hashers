@@ -7,7 +7,7 @@ use std::hash::Hasher;
 use std::num::Wrapping;
 use std::{mem, ptr};
 
-// pub mod spooky_hash;
+pub mod spooky_hash;
 
 // ================================
 // one_at_a_time

@@ -58,6 +58,7 @@ fn do_hashes(samples: &[Vec<u8>]) {
     println!("fxhash:   {}", chi2(&samples, fx_hash::fxhash, 7));
     println!("fxhash32: {}", chi2(&samples, fx_hash::fxhash32, 7));
     println!("fxhash64: {}", chi2(&samples, fx_hash::fxhash64, 7));
+    println!("spooky:   {}", chi2(&samples, jenkins::spooky_hash::spooky, 7));
 }
 
 fn main() {

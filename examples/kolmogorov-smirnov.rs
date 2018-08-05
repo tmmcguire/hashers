@@ -60,6 +60,7 @@ fn run_sample(name: &str, samples: &[Vec<u8>]) {
     print_ks(name, "fxhash  ", ks(&do_hashes(hashers::fx_hash::fxhash, samples)));
     print_ks(name, "fxhash32", ks(&do_hashes(hashers::fx_hash::fxhash32, samples)));
     print_ks(name, "fxhash64", ks(&do_hashes(hashers::fx_hash::fxhash64, samples)));
+    print_ks(name, "spooky  ", ks(&do_hashes(hashers::jenkins::spooky_hash::spooky, samples)));
 }
 
 fn main() {
