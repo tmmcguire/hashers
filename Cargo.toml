@@ -6,6 +6,9 @@ description = "A collection of non-cryptographic hashing algorithms for Rust"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/tmmcguire/hashers"
 repository = "https://github.com/tmmcguire/hashers"
+readme = "README.md"
+keywords = [ "hash", "Hasher" ]
+categories = [ "algorithms" ]
 
 [dependencies]
 fxhash = "0.2.1"
