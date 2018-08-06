@@ -7,7 +7,7 @@
 //! > wait, djb2 is one of the best string hash functions i know. it has
 //! > excellent distribution and speed on many different sets of keys
 //! > and table sizes. you are not likely to do better with one of the
-//! > "well known" functions such as PJW, K&R[1], etc. Also see tpop
+//! > "well known" functions such as PJW, K&R, etc. Also see tpop
 //! > pp. 126 for graphing hash functions.
 //!
 //! "tpop" is *The Practice of Programming*. This page shows three
@@ -28,8 +28,8 @@ use std::num::Wrapping;
 ///
 /// > this algorithm (k=33) was first reported by dan bernstein many
 /// > years ago in comp.lang.c. another version of this algorithm (now
-/// > favored by bernstein) uses xor: hash(i) = hash(i - 1) * 33 ^
-/// > str[i]; the magic of number 33 (why it works better than many
+/// > favored by bernstein) uses xor: `hash(i) = hash(i - 1) * 33 ^
+/// > str[i];` the magic of number 33 (why it works better than many
 /// > other constants, prime or not)
 /// > has never been adequately explained.
 ///
@@ -38,7 +38,7 @@ use std::num::Wrapping;
 /// > If your keys are lowercase English words, this will fit 6
 /// > characters into a 32-bit hash with no collisions (you'd
 /// > have to compare all 32 bits). If your keys are mixed case
-/// > English words, 65 * hash+key[i] fits 5 characters into a 32-bit
+/// > English words, `65 * hash+key[i]` fits 5 characters into a 32-bit
 /// > hash with no collisions. That means this type of hash can
 /// > produce (for the right type of keys) fewer collisions than
 /// > a hash that gives a more truly random distribution. If your
@@ -101,7 +101,7 @@ mod djb2_tests {
 /// > to do well in scrambling bits, causing better distribution
 /// > of the keys and fewer splits. it also happens to be a good
 /// > general hashing function with good distribution. the actual
-/// > function is hash(i) = hash(i - 1) * 65599 + str[i]; what is
+/// > function is `hash(i) = hash(i - 1) * 65599 + str[i];` what is
 /// > included below is the faster version used in gawk. [there is
 /// > even a faster, duff-device version] the magic constant 65599
 /// > was picked out of thin air while experimenting with different

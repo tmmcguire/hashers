@@ -2,6 +2,8 @@
 //!
 //! This module mostly comes from his survey of hash functions. See also
 //! https://en.wikipedia.org/wiki/Jenkins_hash_function.
+//!
+//! This module includes a sub-module implementing SpookyHash.
 
 use std::hash::Hasher;
 use std::num::Wrapping;
@@ -74,8 +76,7 @@ mod oaat_tests {
 // ================================
 // lookup3
 
-/// Another Hasher from the inventor of SpookyHash (which should be
-/// here, soon). Fancy bit-mixing. *Very fancy.*
+/// Another Hasher from the inventor of SpookyHash. Fancy bit-mixing. *Very fancy.*
 ///
 /// From http://www.burtleburtle.net/bob/hash/doobs.html:
 ///
