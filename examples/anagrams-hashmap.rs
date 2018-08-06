@@ -1,5 +1,3 @@
-#![feature(duration_as_u128)]
-
 // **WARNING:** This program must be compiled in --release mode, with optimizations, or it will
 // take a very, very long time.
 
@@ -91,13 +89,16 @@ fn time<H: Default + Hasher>(title: &str, baseline: f64) -> f64 {
     let start = time::Instant::now();
     assert_eq!(do_search::<H>(), 7440);
     let duration = time::Instant::now().duration_since(start);
+    let secs = duration.as_secs();
+    let micros = duration.subsec_micros();
+    let time = (secs as f64) + ((micros as f64) / 1_000_000.0);
     if baseline > 0.0 {
-        let percent = ((duration.as_micros() as f64 / baseline) * 1000.0).round() / 10.0;
+        let percent = ((time / baseline) * 1000.0).round() / 10.0;
         println!("{} {:?} ({}%)", title, duration, percent);
     } else {
         println!("{} {:?}", title, duration);
     }
-    duration.as_micros() as f64
+    time
 }
 
 fn main() {
