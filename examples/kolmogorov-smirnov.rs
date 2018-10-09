@@ -44,7 +44,7 @@ fn ks(samples: &[u64]) -> f64 {
 }
 
 fn print_ks(sample: &str, hash: &str, d: f64) {
-    println!("{} {} {}", sample, hash, d);
+    println!("{:10} {:10} {: <10.4}", sample, hash, d);
 }
 
 fn run_sample(name: &str, samples: &[Vec<u8>]) {

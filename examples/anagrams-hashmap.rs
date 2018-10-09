@@ -94,9 +94,9 @@ fn time<H: Default + Hasher>(title: &str, baseline: f64) -> f64 {
     let time = (secs as f64) + ((micros as f64) / 1_000_000.0);
     if baseline > 0.0 {
         let percent = ((time / baseline) * 1000.0).round() / 10.0;
-        println!("{} {:?} ({}%)", title, duration, percent);
+        println!("{:10} {: >8.3}s ({}%)", title, time, percent);
     } else {
-        println!("{} {:?}", title, duration);
+        println!("{:10} {: >8.3}s", title, time);
     }
     time
 }

@@ -44,21 +44,25 @@ fn chi2(sample: &[Vec<u8>], hfcn: fn(&[u8]) -> u64, mask_size: u32) -> f64 {
     (chi2 - (n_buckets as f64)) / (n_buckets as f64).sqrt()
 }
 
+fn do_print(name: &str, chi2: f64) {
+    println!("{: <9}:  {: >12.4}", name, chi2);
+}
+
 fn do_hashes(samples: &[Vec<u8>]) {
-    println!("default:  {}", chi2(&samples, builtin::default, 7));
-    println!("djb2:     {}", chi2(&samples, oz::djb2, 7));
-    println!("lookup3:  {}", chi2(&samples, jenkins::lookup3, 7));
-    println!("loselose: {}", chi2(&samples, oz::loselose, 7));
-    println!("null:     {}", chi2(&samples, null::null, 7));
-    println!("OAAT:     {}", chi2(&samples, jenkins::oaat, 7));
-    println!("Pass:     {}", chi2(&samples, null::passthrough, 7));
-    println!("sdbm:     {}", chi2(&samples, oz::sdbm, 7));
-    println!("fnv1a 32: {}", chi2(&samples, fnv::fnv1a32, 7));
-    println!("fnv1a 64  {}", chi2(&samples, fnv::fnv1a64, 7));
-    println!("fxhash:   {}", chi2(&samples, fx_hash::fxhash, 7));
-    println!("fxhash32: {}", chi2(&samples, fx_hash::fxhash32, 7));
-    println!("fxhash64: {}", chi2(&samples, fx_hash::fxhash64, 7));
-    println!("spooky:   {}", chi2(&samples, jenkins::spooky_hash::spooky, 7));
+    do_print("default",  chi2(&samples, builtin::default, 5));
+    do_print("djb2",     chi2(&samples, oz::djb2, 5));
+    do_print("lookup3",  chi2(&samples, jenkins::lookup3, 5));
+    do_print("loselose", chi2(&samples, oz::loselose, 5));
+    do_print("null",     chi2(&samples, null::null, 5));
+    do_print("OAAT",     chi2(&samples, jenkins::oaat, 5));
+    do_print("Pass",     chi2(&samples, null::passthrough, 5));
+    do_print("sdbm",     chi2(&samples, oz::sdbm, 5));
+    do_print("fnv1a 32", chi2(&samples, fnv::fnv1a32, 5));
+    do_print("fnv1a 64", chi2(&samples, fnv::fnv1a64, 5));
+    do_print("fxhash",   chi2(&samples, fx_hash::fxhash, 5));
+    do_print("fxhash32", chi2(&samples, fx_hash::fxhash32, 5));
+    do_print("fxhash64", chi2(&samples, fx_hash::fxhash64, 5));
+    do_print("spooky",   chi2(&samples, jenkins::spooky_hash::spooky, 5));
 }
 
 fn main() {
