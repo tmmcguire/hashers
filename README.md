@@ -127,6 +127,8 @@ This collection of Hashers is based on:
 - https://github.com/cbreeden/fxhash A fast, non-secure, hashing algorithm derived from an
   internal hasher in FireFox. (fx_hash)
 - http://www.isthe.com/chongo/tech/comp/fnv/ The Fowler/Noll/Vo hash algorithm. (fnv)
+- https://hbfs.wordpress.com/2015/11/17/and-a-good-one-hash-functions-part vi/
+  Steven Pigeon's Bricolage hash algorithm.
 - Two "null" hashers: NullHasher returns 0 for all inputs and PassThroughHasher returns the
   last 8 bytes of the data.
 

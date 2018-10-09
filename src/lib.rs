@@ -263,6 +263,7 @@ macro_rules! hasher_to_fcn {
 // Hashing modules
 
 pub mod jenkins;
+pub mod pigeon;
 pub mod oz;
 
 /// For easy access, reexport the built-in hash map's DefaultHasher,

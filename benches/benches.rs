@@ -14,6 +14,7 @@ use hashers::fx_hash::*;
 use hashers::jenkins::spooky_hash::*;
 use hashers::jenkins::*;
 use hashers::null::*;
+use hashers::pigeon::*;
 use hashers::oz::*;
 
 macro_rules! tiny_bench {
@@ -27,16 +28,17 @@ macro_rules! tiny_bench {
 }
 
 tiny_bench!(tiny_default, default, DefaultHasher);
+tiny_bench!(tiny_bricolage, bricolage, Bricolage);
 tiny_bench!(tiny_djb2, djb2, DJB2Hasher);
-tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
-tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
-tiny_bench!(tiny_oaat, oaat, OAATHasher);
-tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
-tiny_bench!(tiny_passthrough, passthrough, PassThroughHasher);
 tiny_bench!(tiny_fnv1a64, fnv1a64, FNV1aHasher64);
 tiny_bench!(tiny_fxhash, fxhash, FxHasher);
 tiny_bench!(tiny_fxhash32, fxhash32, FxHasher32);
 tiny_bench!(tiny_fxhash64, fxhash64, FxHasher64);
+tiny_bench!(tiny_lookup3, lookup3, Lookup3Hasher);
+tiny_bench!(tiny_loselose, loselose, LoseLoseHasher);
+tiny_bench!(tiny_oaat, oaat, OAATHasher);
+tiny_bench!(tiny_passthrough, passthrough, PassThroughHasher);
+tiny_bench!(tiny_sdbm, sdbm, SDBMHasher);
 tiny_bench!(tiny_spooky, spooky, SpookyHasher);
 
 macro_rules! w32_bench {
@@ -64,6 +66,7 @@ w32_bench!(w32_10_passthrough, PassThroughHasher, 10);
 w32_bench!(w32_10_fnv1a64, FNV1aHasher64, 10);
 w32_bench!(w32_10_fxhash, FxHasher, 10);
 w32_bench!(w32_10_spooky, SpookyHasher, 10);
+w32_bench!(w32_10_bricolage, Bricolage, 10);
 
 w32_bench!(w32_100_default, DefaultHasher, 100);
 w32_bench!(w32_100_djb2, DJB2Hasher, 100);
@@ -75,6 +78,7 @@ w32_bench!(w32_100_passthrough, PassThroughHasher, 100);
 w32_bench!(w32_100_fnv1a64, FNV1aHasher64, 100);
 w32_bench!(w32_100_fxhash, FxHasher, 100);
 w32_bench!(w32_100_spooky, SpookyHasher, 100);
+w32_bench!(w32_100_bricolage, Bricolage, 100);
 
 w32_bench!(w32_1000_default, DefaultHasher, 1000);
 w32_bench!(w32_1000_djb2, DJB2Hasher, 1000);
@@ -86,6 +90,7 @@ w32_bench!(w32_1000_passthrough, PassThroughHasher, 1000);
 w32_bench!(w32_1000_fnv1a64, FNV1aHasher64, 1000);
 w32_bench!(w32_1000_fxhash, FxHasher, 1000);
 w32_bench!(w32_1000_spooky, SpookyHasher, 1000);
+w32_bench!(w32_1000_bricolage, Bricolage, 1000);
 
 macro_rules! w64_bench {
     ($name:ident, $hasher:ident, $count:expr) => {
@@ -112,6 +117,7 @@ w64_bench!(w64_10_passthrough, PassThroughHasher, 10);
 w64_bench!(w64_10_fnv1a64, FNV1aHasher64, 10);
 w64_bench!(w64_10_fxhash, FxHasher, 10);
 w64_bench!(w64_10_spooky, SpookyHasher, 10);
+w64_bench!(w64_10_bricolage, Bricolage, 10);
 
 w64_bench!(w64_100_default, DefaultHasher, 100);
 w64_bench!(w64_100_djb2, DJB2Hasher, 100);
@@ -123,6 +129,7 @@ w64_bench!(w64_100_passthrough, PassThroughHasher, 100);
 w64_bench!(w64_100_fnv1a64, FNV1aHasher64, 100);
 w64_bench!(w64_100_fxhash, FxHasher, 100);
 w64_bench!(w64_100_spooky, SpookyHasher, 100);
+w64_bench!(w64_100_bricolage, Bricolage, 100);
 
 w64_bench!(w64_1000_default, DefaultHasher, 1000);
 w64_bench!(w64_1000_djb2, DJB2Hasher, 1000);
@@ -134,6 +141,7 @@ w64_bench!(w64_1000_passthrough, PassThroughHasher, 1000);
 w64_bench!(w64_1000_fnv1a64, FNV1aHasher64, 1000);
 w64_bench!(w64_1000_fxhash, FxHasher, 1000);
 w64_bench!(w64_1000_spooky, SpookyHasher, 1000);
+w64_bench!(w64_1000_bricolage, Bricolage, 1000);
 
 fn read_words() -> Vec<String> {
     use std::fs::File;
@@ -173,6 +181,7 @@ words_bench!(words1000_passthrough, PassThroughHasher, 1000);
 words_bench!(words1000_fnv1a64, FNV1aHasher64, 1000);
 words_bench!(words1000_fxhash, FxHasher, 1000);
 words_bench!(words1000_spooky, SpookyHasher, 1000);
+words_bench!(words1000_bricolage, Bricolage, 1000);
 
 macro_rules! file_bench {
     ($name:ident, $fcn:ident) => {
@@ -196,3 +205,4 @@ file_bench!(file_fnv1a64, fnv1a64);
 file_bench!(file_fnv1a32, fnv1a32);
 file_bench!(file_fxhash, fxhash);
 file_bench!(file_spooky, spooky);
+file_bench!(file_bricolage, bricolage);

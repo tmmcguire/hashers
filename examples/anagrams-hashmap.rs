@@ -8,7 +8,7 @@ use std::hash::{BuildHasher, BuildHasherDefault, Hasher};
 use std::io::{BufRead, BufReader};
 use std::{fs, time};
 
-use hashers::{builtin, fnv, fx_hash, jenkins, oz};
+use hashers::{builtin, fnv, fx_hash, jenkins, oz, pigeon};
 
 pub mod combinations;
 
@@ -113,4 +113,5 @@ fn main() {
     time::<fx_hash::FxHasher32>("fxhash32", baseline);
     time::<fx_hash::FxHasher64>("fxhash64", baseline);
     time::<jenkins::spooky_hash::SpookyHasher>("spooky", baseline);
+    time::<pigeon::Bricolage>("bricolage", baseline);
 }

@@ -4,7 +4,7 @@ extern crate rand;
 
 extern crate hashers;
 
-use hashers::{builtin, fnv, fx_hash, jenkins, null, oz};
+use hashers::{builtin, fnv, fx_hash, jenkins, null, pigeon, oz};
 
 mod samples;
 
@@ -49,20 +49,21 @@ fn do_print(name: &str, chi2: f64) {
 }
 
 fn do_hashes(samples: &[Vec<u8>]) {
-    do_print("default",  chi2(&samples, builtin::default, 5));
-    do_print("djb2",     chi2(&samples, oz::djb2, 5));
-    do_print("lookup3",  chi2(&samples, jenkins::lookup3, 5));
-    do_print("loselose", chi2(&samples, oz::loselose, 5));
-    do_print("null",     chi2(&samples, null::null, 5));
-    do_print("OAAT",     chi2(&samples, jenkins::oaat, 5));
-    do_print("Pass",     chi2(&samples, null::passthrough, 5));
-    do_print("sdbm",     chi2(&samples, oz::sdbm, 5));
-    do_print("fnv1a 32", chi2(&samples, fnv::fnv1a32, 5));
-    do_print("fnv1a 64", chi2(&samples, fnv::fnv1a64, 5));
-    do_print("fxhash",   chi2(&samples, fx_hash::fxhash, 5));
-    do_print("fxhash32", chi2(&samples, fx_hash::fxhash32, 5));
-    do_print("fxhash64", chi2(&samples, fx_hash::fxhash64, 5));
-    do_print("spooky",   chi2(&samples, jenkins::spooky_hash::spooky, 5));
+    do_print("default",   chi2(&samples, builtin::default, 5));
+    do_print("djb2",      chi2(&samples, oz::djb2, 5));
+    do_print("lookup3",   chi2(&samples, jenkins::lookup3, 5));
+    do_print("loselose",  chi2(&samples, oz::loselose, 5));
+    do_print("null",      chi2(&samples, null::null, 5));
+    do_print("OAAT",      chi2(&samples, jenkins::oaat, 5));
+    do_print("Pass",      chi2(&samples, null::passthrough, 5));
+    do_print("sdbm",      chi2(&samples, oz::sdbm, 5));
+    do_print("fnv1a 32",  chi2(&samples, fnv::fnv1a32, 5));
+    do_print("fnv1a 64",  chi2(&samples, fnv::fnv1a64, 5));
+    do_print("fxhash",    chi2(&samples, fx_hash::fxhash, 5));
+    do_print("fxhash32",  chi2(&samples, fx_hash::fxhash32, 5));
+    do_print("fxhash64",  chi2(&samples, fx_hash::fxhash64, 5));
+    do_print("spooky",    chi2(&samples, jenkins::spooky_hash::spooky, 5));
+    do_print("bricolage", chi2(&samples, pigeon::bricolage, 5));
 }
 
 fn main() {
