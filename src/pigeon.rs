@@ -1,4 +1,4 @@
-//! # Hash functions by Steven Pigeon (https://hbfs.wordpress.com/)
+//! Hash functions by Steven Pigeon (https://hbfs.wordpress.com/)
 //!
 //! From:
 //!
