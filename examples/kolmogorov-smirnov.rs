@@ -48,20 +48,20 @@ fn print_ks(sample: &str, hash: &str, d: f64) {
 }
 
 fn run_sample(name: &str, samples: &[Vec<u8>]) {
-    print_ks(name, "null     ", ks(&do_hashes(hashers::null::null, samples)));
-    print_ks(name, "passthru ", ks(&do_hashes(hashers::null::passthrough, samples)));
+    print_ks(name, "bricolage", ks(&do_hashes(hashers::pigeon::bricolage, samples)));
     print_ks(name, "default  ", ks(&do_hashes(hashers::builtin::default, samples)));
-    print_ks(name, "loselose ", ks(&do_hashes(hashers::oz::loselose, samples)));
-    print_ks(name, "sdbm     ", ks(&do_hashes(hashers::oz::sdbm, samples)));
     print_ks(name, "djb2     ", ks(&do_hashes(hashers::oz::djb2, samples)));
-    print_ks(name, "oaat     ", ks(&do_hashes(hashers::jenkins::oaat, samples)));
-    print_ks(name, "lookup3  ", ks(&do_hashes(hashers::jenkins::lookup3, samples)));
     print_ks(name, "fnv1a 64 ", ks(&do_hashes(hashers::fnv::fnv1a64, samples)));
     print_ks(name, "fxhash   ", ks(&do_hashes(hashers::fx_hash::fxhash, samples)));
     print_ks(name, "fxhash32 ", ks(&do_hashes(hashers::fx_hash::fxhash32, samples)));
     print_ks(name, "fxhash64 ", ks(&do_hashes(hashers::fx_hash::fxhash64, samples)));
+    print_ks(name, "lookup3  ", ks(&do_hashes(hashers::jenkins::lookup3, samples)));
+    print_ks(name, "loselose ", ks(&do_hashes(hashers::oz::loselose, samples)));
+    print_ks(name, "null     ", ks(&do_hashes(hashers::null::null, samples)));
+    print_ks(name, "oaat     ", ks(&do_hashes(hashers::jenkins::oaat, samples)));
+    print_ks(name, "passthru ", ks(&do_hashes(hashers::null::passthrough, samples)));
+    print_ks(name, "sdbm     ", ks(&do_hashes(hashers::oz::sdbm, samples)));
     print_ks(name, "spooky   ", ks(&do_hashes(hashers::jenkins::spooky_hash::spooky, samples)));
-    print_ks(name, "bricolage", ks(&do_hashes(hashers::pigeon::bricolage, samples)));
 }
 
 fn main() {
