@@ -394,6 +394,7 @@ fn short(message: &[u8], length: usize, hash1: &mut Wrapping<u64>, hash2: &mut W
 /// > keys hash in 3 bytes per cycle, short keys take about 1 byte per cycle, and there is a 30 cycle
 /// > startup cost. Keys can be supplied in fragments. The function allows a 128-bit seed. It's named
 /// > SpookyHash because it was released on Halloween.
+#[derive(Clone, Copy)]
 pub struct SpookyHasher {
     // unhashed data, for partial messages; 2 * m_state, in bytes
     pub m_data: [u8; SC_BUF_SIZE],
